@@ -16,6 +16,13 @@ class myHandler(BaseHTTPRequestHandler):
 		self.wfile.write("Hello World !")
 		return
 
+	def do_POST(self):
+
+		content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+		post_data = self.rfile.read(content_length) # <--- Gets the data itself
+		print post_data
+		self.send_response(200)
+
 try:
 	#Create a web server and define the handler to manage the
 	#incoming request
