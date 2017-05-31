@@ -1,30 +1,19 @@
-import socket
-import sys
+import socket               # Import socket module
 
-# Read users file
-database = dict()
-with open("dontOpenPasswordsInside.txt") as db:
-    for line in db:
-        (usr, psw) = line.split()
-        database[usr] = psw
+s = socket.socket()         # Create a socket object
+host = socket.gethostname() # Get local machine name
+port = 12345                 # Reserve a port for your service.
 
-def add_user(store):
-    user = raw_input('Create Username: ')
-    password = raw_input('Create Password: ')
-    if user in database:
-        print "That user already exists"
-        return False
-    else:
-        database[user] = password
-        return True
-
-opt = 0
-while opt != 3:
-    print "Select option:"
-    print "1. Create user"
-    print "2. Upload file"
-    print "3. Exit"
-
-    opt = int(raw_input('Enter option: '))
-    if(opt == 1):
-        add_user(database)
+s.connect((host, port))
+f = open('tosend.png','rb')
+print 'Sending...'
+l = f.read(1024)
+while (l):
+    print 'Sending...'
+    s.send(l)
+    l = f.read(1024)
+f.close()
+print "Done Sending"
+s.shutdown(socket.SHUT_WR)
+print s.recv(1024)
+s.close()
