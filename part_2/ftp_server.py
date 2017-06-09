@@ -12,5 +12,8 @@ while 1:
     data = conn.recv(1024)
     if not data: break # Se nao tiver dados recebido (0) significa que a conexao acabou
     data = data.split('@')
-    conn.sendall(data[0])
+    option = int(data[0])
+    login = data[1]
+    senha = data[2]
+    
 conn.close() # Fecha a conexao
