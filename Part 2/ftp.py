@@ -3,7 +3,9 @@ import socket
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 from PyQt5.QtGui import QIcon
- 
+import pandas as pd
+
+PORTA = 5252
 class App(QWidget):
  
     def __init__(self):
@@ -13,7 +15,7 @@ class App(QWidget):
         self.top = 10
         self.width = 640
         self.height = 480
-        #self.initUI()
+        self.initUI()
  
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -33,12 +35,13 @@ class App(QWidget):
 
 
 if __name__ == '__main__':
+    data = pd.read_csv("dontOpenPasswordsInside.csv").iloc[:,:].values
     print "Deseja Fazer um Upload(0) ou Download(1) ?"
     operation = int(raw_input())
     if operation == 0:  #Upload
         s = socket.socket()         # Create a socket object
         host = socket.gethostname() # Get local machine name
-        port = 12340                 # Reserve a port for your service.
+        port = PORTA                 # Reserve a port for your service.
         print "O host escolhido foi:",host,":",port
         s.connect((host, port))
         print "Escolha o arquivo:"
@@ -62,7 +65,7 @@ if __name__ == '__main__':
     if operation == 1:  #Download
         s = socket.socket()         # Create a socket object
         host = socket.gethostname()  # Get local machine name
-        port = 12340                 # Reserve a port for your service.
+        port = PORTA                 # Reserve a port for your service.
         print "O host escolhido foi:",host,":",port
         s.bind((host, port))        # Bind to the port
         f = open("reciveFile",'wb')
