@@ -13,5 +13,8 @@ senha = raw_input("Digite sua senha: ");
 
 s.sendall(opt + "@" +login + "@" + senha) # enviando a string hello world 
 data = s.recv(1024) # esperando resposta do servidor
-s.close()
 print 'Received', repr(data) # printa os dados recebidos
+
+
+raw_input()
+s.close()
