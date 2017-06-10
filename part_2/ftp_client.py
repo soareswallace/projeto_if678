@@ -3,7 +3,7 @@ import socket
 import sys
 
 HOST = "localhost"
-PORT = int (sys.argv[1])
+PORT = int (sys.argv[1])  #leitura da porta que sera dada com input do user.
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
 s.connect((HOST, PORT)) # conectando ao servidor
 # USER INTERFACE]
