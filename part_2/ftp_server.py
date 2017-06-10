@@ -2,8 +2,9 @@ import socket
 import sys
 import pandas as pd
 import numpy as np
+
 HOST = ""                 # Nome Simbolico que significa todas as interfaces
-PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente
+PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
 s.bind((HOST, PORT))
 s.listen(1) # Somente 1 conexao na fila eh aceita
