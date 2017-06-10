@@ -29,7 +29,7 @@ while 1:
     if option == 1:  # Criar
         if login in dataset[:,0]:
             conn.sendall("Login ja existente")
-    elif option == 2:  
+    elif option == 2:
         if [login,senha] in dataset:
             conn.sendall("Logado!")
     
