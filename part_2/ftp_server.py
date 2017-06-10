@@ -22,7 +22,9 @@ while 1:
     option = int(data[0])
     login = data[1]
     senha = data[2]
+    #print data         #print de debugger
     for l in data:
+        #print l         #l sera cada elemento de data, e.q. => [2, wallace, starwars]
         conn.sendall(l)
     if option == 1:  # Criar
         if login in dataset[:,0]:
