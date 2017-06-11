@@ -13,25 +13,26 @@ print 'Connected by', addr
 
 dataset = np.array( pd.read_csv("dontOpenPasswordsInside.csv").iloc[:,:].values, dtype=str)
 
-
 while 1:
     data = conn.recv(1024)
-    if not data: continue # Se nao tiver dados recebido (0) significa que a conexao acabou
+    if not data: break # Se nao tiver dados recebido (0) significa que a conexao acabou
     data = data.replace(" ", "")
     data = data.split('@')
     option = int(data[0])
     login = data[1]
     senha = data[2]
     #print data         #print de debugger
-    for l in data:
-        #print l         #l sera cada elemento de data, e.q. => [2, wallace, starwars]
-        conn.sendall(l)
     if option == 1:  # Criar
         if login in dataset[:,0]:
             conn.sendall("Login ja existente")
+        else:
+            alloc = pd.DataFrame([{login,senha}])
+            alloc.to_csv("dontOpenPasswordsInside.csv", mode="a", header=False, index=False)
+
     elif option == 2:
         if [login,senha] in dataset:
             conn.sendall("Logado!")
-    
-        
+        else:
+            conn.sendall("Login ou senha incorretos!")
+
 conn.close() # Fecha a conexao
