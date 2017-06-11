@@ -3,7 +3,7 @@ import socket
 import sys
 
 HOST = "localhost"
-PORT = int (sys.argv[1])  #leitura da porta que sera dada com input do user.
+PORT = 5006  #leitura da porta que sera dada com input do user.
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
 s.connect((HOST, PORT)) # conectando ao servidor
 # USER INTERFACE]
@@ -26,6 +26,21 @@ while data == "Login ja existente":
 	print repr(data)
 if data == "Logado!":
 	print "Bem-vindo a Zuera"
+	print "Escolha o arquivo"
+	fileName = raw_input()
+	print "O arquivo escolhido foi", fileName
+	f = open(fileName, 'rb')
+	print "Sending..."
+	l = f.read(1024)
+	while (l):
+		print "Sending..."
+		s.send(l)
+		l = f.read(1024)
+	f.close()
+	print "Done Sending"
+	s.shutdown(socket.SHUT_WR)
+	print s.recv(1024)
+	s.close()
 else:
 	print "Sai desse corpo que nao te pertence"
 #print 'Received', repr(data) # printa os dados recebidos

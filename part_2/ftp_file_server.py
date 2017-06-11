@@ -4,11 +4,10 @@ import pandas as pd
 import numpy as np
 
 HOST = ""                 # Nome Simbolico que significa todas as interfaces
-PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
+PORT = 5006              # Porta escolhida arbitrariamente escolhida pelo user
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
 s.bind((HOST, PORT))
-s.listen(1) # Somente 1 conexao na fila eh aceita
-
+s.listen(10) # Somente 1 conexao na fila eh aceita
 dataset = np.array( pd.read_csv("dontOpenPasswordsInside.csv").iloc[:,:].values, dtype=str)
 
 while True:
@@ -37,13 +36,18 @@ while True:
             alloc = pd.DataFrame([{login,senha}])
             alloc.to_csv("dontOpenPasswordsInside.csv", mode="a", header=False, index=False)
             conn.sendall("Login criado com sucesso!")
-            conn.close() # Fecha a conexao
         elif option == 2:
             if [login,senha] in dataset:
+                f = open('recebido.png', 'wb')
                 conn.sendall("Logado!")
-                conn.close() # Fecha a conexao
+                l = conn.recv(1024)
+                while(l):
+                    f.write(l)
+                    l = conn.recv(1024)
+                f.close()
+                print "Done!"
+                conn.send('Done')
         else:
             conn.sendall("Login ou senha incorretos!")
-            conn.close() # Fecha a conexao
 
     conn.close() # Fecha a conexao
