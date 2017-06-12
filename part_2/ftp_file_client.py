@@ -38,7 +38,7 @@ while opt != '3':
 			s.send(l)
 			l = f.read(1024)
 		f.close()
-		s.shutdown(socket.SHUT_WR)
+		s.shutdown(socket.SHUT_WR) #esse negocio chato
 		print "Done Sending"
 		data = s.recv(1024) # esperando resposta do servidor
 		print "Servidor disse:", data
