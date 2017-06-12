@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 HOST = ""                 # Nome Simbolico que significa todas as interfaces
-PORT = 5006              # Porta escolhida arbitrariamente escolhida pelo user
+PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
 s.bind((HOST, PORT))
 s.listen(10) # Somente 1 conexao na fila eh aceita
@@ -37,17 +37,24 @@ while True:
             alloc.to_csv("dontOpenPasswordsInside.csv", mode="a", header=False, index=False)
             conn.sendall("Login criado com sucesso!")
         elif option == 2:
-            if [login,senha] in dataset:
-                f = open('recebido.png', 'wb')
+            enviar_again = 1
+            while [login,senha] in dataset and enviar_again == 1:
+                f = open('recebido_ftp', 'wb')
                 conn.sendall("Logado!")
                 l = conn.recv(1024)
                 while(l):
                     f.write(l)
                     l = conn.recv(1024)
                 f.close()
-                print "Done!"
-                conn.send('Done')
-        else:
-            conn.sendall("Login ou senha incorretos!")
+                print "Recebido pelo servidor"
+                conn.send('Recebi')
+                conn.send('Quer enviar mais um arquivo ? \n1 - Sim\n0 - Nao ')
+                
+                enviar_again = conn.recv(1024)
+                if enviar_again == '1':
+                    enviar_again = 1
+                    conn.sendall("Logado!")
+        elif option == 3:
+            conn.sendall("Fechando essa bagaca!")
 
     conn.close() # Fecha a conexao
