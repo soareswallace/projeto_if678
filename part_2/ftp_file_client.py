@@ -16,7 +16,7 @@ def readCred():
 def menu():
 	opt = raw_input("\n1 - Criar login\n2 - Login\n3-Sair\nDigite opcao: ")
 	[login, senha] = readCred()
-	return [opt, login, senha]
+	return [int(opt), login, senha]
 
 def send_string(str):
 	s.sendall(str) # enviando a string hello world
@@ -28,7 +28,7 @@ def conn_interface(opt, login, senha):
 	# Create login
 	if opt == 1:
 		while True:
-			str2send = opt + "@" + login + "@" + senha
+			str2send = str(opt) + "@" + login + "@" + senha
 			data = send_string(str2send)
 			if (data != "Login ja existente"):
 				break
@@ -39,7 +39,7 @@ def conn_interface(opt, login, senha):
 	return
 
 #--Global variables-#
-opt = '0'
+opt = 0
 data = "l"
 #------------------#
 
@@ -48,7 +48,7 @@ while True:
 	[HOST, PORT, s] = init() # initialize
 
 	[opt, login, senha] = menu() # login (menu)
-	if opt == "3":
+	if opt == 3:
 		break
 
 	###########CONNECTION INTERFACE##############
