@@ -1,6 +1,5 @@
 import socket
 import sys
-import pandas as pd
 import numpy as np
 
 def init():
@@ -9,8 +8,10 @@ def init():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
     s.listen(10) # Somente 1 conexao na fila eh aceita
-    dataset = np.array( pd.read_csv("dontOpenPasswordsInside.csv").iloc[:,:].values, dtype=str)
+    with open('database.txt','r') as f:
+        dataset = [tuple(map(str, i.split(' '))) for i in f]
     return [HOST, PORT, s,dataset]
+
 
 def recv_data(conn, addr):
     data = conn.recv(1024)
@@ -25,10 +26,12 @@ def recv_data(conn, addr):
     print ("Recebi:",option, login, senha)
     return [option, login, senha]
 
-def insert_db(login, senha):
-    alloc = pd.DataFrame([{login,senha}])
-    alloc.to_csv("dontOpenPasswordsInside.csv", mode="a", header=False, index=False)
-    conn.sendall("Login criado com sucesso!")
+def insert_db(t):
+    f = open('database.txt', 'a')
+    line = ' '.join(str(x) for x in t)
+    f.write(line + '\n')
+    f.close()
+    return
 
 [HOST, PORT, s, dataset] = init()
 while True:
@@ -43,11 +46,11 @@ while True:
         ################### LOGIN CREATION ########################
         if (opt == 1):
             # Existing login
-            if login in dataset[:,0]:
+            login_db = [str(i[0]) for i in dataset]
+            if login in login_db:
                 conn.sendall("Login ja existente!")
-
             else:
-                insert_db(login, senha)
+                insert_db([login, senha])
                 conn.sendall("Login inserido!")
         ###########################################################
         # while login in dataset[:,0] and option == 1:
