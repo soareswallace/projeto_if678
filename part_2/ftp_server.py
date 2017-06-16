@@ -2,14 +2,15 @@ import socket
 import sys
 import numpy as np
 
+with open('database.txt','r') as f:
+    dataset = [tuple(map(str, i.split(' '))) for i in f]
+    
 def init():
     HOST = ""                 # Nome Simbolico que significa todas as interfaces
     PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
     s.listen(10) # Somente 1 conexao na fila eh aceita
-    with open('database.txt','r') as f:
-        dataset = [tuple(map(str, i.split(' '))) for i in f]
     return [HOST, PORT, s,dataset]
 
 
@@ -27,6 +28,7 @@ def recv_data(conn, addr):
     return [option, login, senha]
 
 def insert_db(t):
+    dataset.append(t);
     f = open('database.txt', 'a')
     line = ' '.join(str(x) for x in t)
     f.write(line + '\n')
