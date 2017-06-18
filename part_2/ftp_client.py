@@ -24,9 +24,24 @@ def send_string(str):
 	print (repr(data))
 	return data
 
+def send_file(fileName):
+	f = open(fileName,'rb')
+	l = f.read(1024)
+	while (l):
+	    print 'Enviando...'
+	    s.send(l)
+	    l = f.read(1024)
+	f.close()
+	print "Terminei de enviar"
+	s.shutdown(socket.SHUT_WR)
+	return
+
 def file_clnt():
 	opt = raw_input("\n1 - Upload\n2 - Download\n3-Sair\nDigite opcao: ")
-	send_string(opt)
+	fileName = raw_input("Digite o nome do arquivo (nome.formato): ")
+	str2send = opt + "@" + fileName + "@" + "trash"
+	data = send_string(str2send)
+	send_file(fileName)
 
 def conn_interface(opt, login, senha):
 	# Create login
@@ -46,9 +61,11 @@ def conn_interface(opt, login, senha):
 			data = send_string(str2send)
 			if (repr(data) != "'Login ou senha incorretos!'"):
 				break
-			else:
+			elif (repr(data) != "'Logado!'"):
 				[login, senha] = readCred()
-
+			else:
+				print "Bugou"
+				return
 
 	file_clnt()
 	return

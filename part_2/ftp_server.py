@@ -44,13 +44,23 @@ def create_dir(login):
     return directory
 
 
+def recv_file(directory, fileName, conn, addr):
+    f = open(directory + fileName, 'wb')
+    l = conn.recv(1024)
+    while (l):
+        print "Recebendo..."
+        f.write(l)
+        l = conn.recv(1024)
+    f.close()
+    print "Terminei de receber"
+    return
 
-def file_server(dir,conn, addr):
-    #receive option
-    opt = int(conn.recv(1024))
+def file_server(directory,conn, addr):
+    [opt, fileName, trash] = recv_data(conn, addr)
     # upload (client -> server)
     if (opt == 1):
         conn.sendall("upload")
+        recv_file(directory, fileName, conn, addr)
     # download (server -> client)
     elif (opt == 2):
         conn.sendall("download")
