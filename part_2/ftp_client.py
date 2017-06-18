@@ -22,7 +22,7 @@ def send_string(str):
 	s.sendall(str) # enviando a string hello world
 	data = s.recv(1024) # esperando resposta do servidor
 	print (repr(data))
-	return repr(data)
+	return data
 
 def conn_interface(opt, login, senha):
 	# Create login
@@ -30,10 +30,10 @@ def conn_interface(opt, login, senha):
 		while True:
 			str2send = str(opt) + "@" + login + "@" + senha
 			data = send_string(str2send)
-			if (data != "Login ja existente"):
+			if (repr(data) != "'Login ja existente!'"):
 				break
 			else:
-				readCred()
+				[login, senha] = readCred()
 
 	# Login to existing accounts
 	return
