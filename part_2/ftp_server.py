@@ -1,17 +1,18 @@
 import socket
 import sys
+import os
 import numpy as np
 
 with open('database.txt','r') as f:
     dataset = [tuple(map(str, i.split(' '))) for i in f]
-    
+
 def init():
     HOST = ""                 # Nome Simbolico que significa todas as interfaces
     PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
     s.listen(10) # Somente 1 conexao na fila eh aceita
-    return [HOST, PORT, s,dataset]
+    return [HOST, PORT, s, dataset]
 
 
 def recv_data(conn, addr):
@@ -27,6 +28,7 @@ def recv_data(conn, addr):
     print ("Recebi:",option, login, senha)
     return [option, login, senha]
 
+
 def insert_db(t):
     dataset.append(t);
     f = open('database.txt', 'a')
@@ -35,10 +37,30 @@ def insert_db(t):
     f.close()
     return
 
+def create_dir(login):
+    directory = "data/" + login + "/"
+    if not os.path.exists(directory):
+        os.makedirs(directory, 0755)
+    return directory
+
+
+
+def file_server(dir,conn, addr):
+    #receive option
+    opt = int(conn.recv(1024))
+    # upload (client -> server)
+    if (opt == 1):
+        conn.sendall("upload")
+    # download (server -> client)
+    elif (opt == 2):
+        conn.sendall("download")
+
+
+
 [HOST, PORT, s, dataset] = init()
 while True:
     conn, addr = s.accept() # Aceita uma conexao e guarda o socket que representa a conexao em conn e adress em addr
-    print 'Connected by', addr
+    print 'Conectado por: ', addr
 
     while True:
         [opt, login, senha] = recv_data(conn, addr)
@@ -46,14 +68,23 @@ while True:
             break
 
         ################### LOGIN CREATION ########################
+        login_db = [str(i[0]) for i in dataset]
         if (opt == 1):
-            # Existing login
-            login_db = [str(i[0]) for i in dataset]
             if login in login_db:
                 conn.sendall("Login ja existente!")
             else:
                 insert_db([login, senha])
+                directory = create_dir(login)
                 conn.sendall("Login inserido!")
+                file_server(directory, conn, addr)
+
+        if (opt == 2):
+            # check if login matches password
+            if [login, senha] not in dataset:
+                conn.sendall("Login ou senha incorretos!")
+            else:
+                conn.sendall("Logado!")
+                file_server("usr/" + login + "/", conn, addr)
         ###########################################################
         # while login in dataset[:,0] and option == 1:
         #     conn.sendall("Login ja existente")
@@ -87,7 +118,7 @@ while True:
         #         if enviar_again == '1':
         #             enviar_again = 1
         #             conn.sendall("Logado!")
-        elif option == 3:
+        elif (opt == 3):
             conn.sendall("Fechando essa bagaca!")
 
     conn.close() # Fecha a conexao

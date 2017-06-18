@@ -24,6 +24,10 @@ def send_string(str):
 	print (repr(data))
 	return data
 
+def file_clnt():
+	opt = raw_input("\n1 - Upload\n2 - Download\n3-Sair\nDigite opcao: ")
+	send_string(opt)
+
 def conn_interface(opt, login, senha):
 	# Create login
 	if opt == 1:
@@ -36,17 +40,27 @@ def conn_interface(opt, login, senha):
 				[login, senha] = readCred()
 
 	# Login to existing accounts
+	if opt == 2:
+		while True:
+			str2send = str(opt) + "@" + login + "@" + senha
+			data = send_string(str2send)
+			if (repr(data) != "'Login ou senha incorretos!'"):
+				break
+			else:
+				[login, senha] = readCred()
+
+
+	file_clnt()
 	return
 
 #--Global variables-#
 opt = 0
 data = "l"
+[HOST, PORT, s] = init() # initialize
 #------------------#
 
 while True:
 	# --------------------------- CONNECTION ----------------------------------#
-	[HOST, PORT, s] = init() # initialize
-
 	[opt, login, senha] = menu() # login (menu)
 	if opt == 3:
 		break
@@ -56,24 +70,24 @@ while True:
 	############################################
 
 	#########          Login        ###########
-	while True:
-		print "Bem-vindo a Zuera"
-		print "Escolha o arquivo"
-		fileName = raw_input()
-		print "O arquivo escolhido foi", fileName
-		f = open(fileName, 'rb')
-		print "Sending..."
-		l = f.read(1024)
-		while (l):
-			print "Sending..."
-			s.send(l)
-			l = f.read(1024)
-		f.close()
-		s.shutdown(socket.SHUT_WR) #esse negocio chato
-		print "Done Sending"
-		data = s.recv(1024) # esperando resposta do servidor
-		print "Servidor disse:", data
-	opt = raw_input("Digite 3 para sair, qualquer outra coisa para continuar...\n")
+	# while True:
+	# 	print "Bem-vindo a Zuera"
+	# 	print "Escolha o arquivo"
+	# 	fileName = raw_input()
+	# 	print "O arquivo escolhido foi", fileName
+	# 	f = open(fileName, 'rb')
+	# 	print "Sending..."
+	# 	l = f.read(1024)
+	# 	while (l):
+	# 		print "Sending..."
+	# 		s.send(l)
+	# 		l = f.read(1024)
+	# 	f.close()
+	# 	s.shutdown(socket.SHUT_WR) #esse negocio chato
+	# 	print "Done Sending"
+	# 	data = s.recv(1024) # esperando resposta do servidor
+	# 	print "Servidor disse:", data
+	# opt = raw_input("Digite 3 para sair, qualquer outra coisa para continuar...\n")
 	#print 'Received', repr(data) # printa os dados recebidos
 	###########################################
 	#-----------------------------------------------------------------#
