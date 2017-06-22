@@ -80,6 +80,9 @@ data = "l"
 
 # --------------------------- CONNECTION ----------------------------------#
 [opt, login, senha] = menu() # login (menu)
+if opt == 3:
+	break
+
 ###########CONNECTION INTERFACE##############
 conn_interface(opt, login, senha)
 
