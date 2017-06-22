@@ -29,19 +29,35 @@ def send_file(fileName):
 	l = f.read(1024)
 	while (l):
 	    print 'Enviando...'
-	    s.send(l)
+	    s.sendall(l)
 	    l = f.read(1024)
 	f.close()
 	print "Terminei de enviar"
 	s.shutdown(socket.SHUT_WR)
 	return
 
+def recv_file(fileName):
+    f = open(fileName, 'wb')
+    l = conn.recv(1024)
+    while (l):
+        print "Recebendo..."
+        s.write(l)
+        l = s.recv(1024)
+    f.close()
+    print "Terminei de receber"
+    s.shutdown(socket.SHUT_WR)
+    return
+
 def file_clnt():
 	opt = raw_input("\n1 - Upload\n2 - Download\n3-Sair\nDigite opcao: ")
 	fileName = raw_input("Digite o nome do arquivo (nome.formato): ")
 	str2send = opt + "@" + fileName + "@" + "trash"
 	data = send_string(str2send)
-	send_file(fileName)
+	if (opt == 1):
+	    send_file(fileName)
+    elif (opt == 2):
+	    recv_file(fileName)
+        
 	return
 
 def conn_interface(opt, login, senha):
@@ -80,9 +96,6 @@ data = "l"
 
 # --------------------------- CONNECTION ----------------------------------#
 [opt, login, senha] = menu() # login (menu)
-if opt == 3:
-	break
-
 ###########CONNECTION INTERFACE##############
 conn_interface(opt, login, senha)
 

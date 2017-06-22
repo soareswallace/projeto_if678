@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 with open('database.txt','r') as f:
-    dataset = [tuple(map(str, i.split(','))) for i in f]
+    dataset = [tuple(map(str, i.split(':'))) for i in f.readlines()]
 
 def init():
     HOST = ""                 # Nome Simbolico que significa todas as interfaces
@@ -32,7 +32,7 @@ def recv_data(conn, addr):
 def insert_db(t):
     dataset.append(t);
     f = open('database.txt', 'a')
-    line = ' '.join(str(x) for x in t)
+    line = ':'.join(str(x) for x in t)
     f.write(line + '\n')
     f.close()
     return
@@ -43,6 +43,16 @@ def create_dir(login):
         os.makedirs(directory, 0755)
     return directory
 
+def send_file(directory, fileName, conn, addr):
+	f = open(directory + fileName,'rb')
+	l = f.read(1024)
+	while (l):
+	    print 'Enviando...'
+	    conn.sendall(l)
+	    l = f.read(1024)
+	f.close()
+	print "Terminei de enviar"
+	return
 
 def recv_file(directory, fileName, conn, addr):
     f = open(directory + fileName, 'wb')
@@ -64,6 +74,7 @@ def file_server(directory,conn, addr):
     # download (server -> client)
     elif (opt == 2):
         conn.sendall("download")
+        send_file(directory, fileName, conn, addr)
 
 
 
@@ -91,7 +102,7 @@ while True:
         if (opt == 2):
         
             # check if login matches password
-            if [login, senha] not in dataset:
+            if [login, senha + '\n'] not in dataset:
                 conn.sendall("Login ou senha incorretos!")
             else:
                 conn.sendall("Logado!")
