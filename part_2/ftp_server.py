@@ -4,7 +4,15 @@ import os
 import numpy as np
 
 with open('database.txt','r') as f:
-    dataset = [tuple(map(str, i.split(' '))) for i in f]
+    dataset = [tuple(map(str, i.rstrip('\r\n').split(' '))) for i in f]
+
+def compDebug((a,b), db):
+    print "oi"
+    for (login, senha) in db:
+        if (login, senha) == (a,b):
+            print "Igual"
+        else:
+            print senha+ "=="+ b+ "?"
 
 def init():
     HOST = ""                 # Nome Simbolico que significa todas as interfaces
@@ -89,12 +97,13 @@ while True:
                 file_server(directory, conn, addr)
 
         if (opt == 2):
+            compDebug((login,senha),dataset)
             # check if login matches password
-            if [login, senha] not in dataset:
+            if (login, senha) not in dataset:
                 conn.sendall("Login ou senha incorretos!")
             else:
                 conn.sendall("Logado!")
-                file_server("usr/" + login + "/", conn, addr)
+                file_server("data/" + login + "/", conn, addr)
         ###########################################################
         # while login in dataset[:,0] and option == 1:
         #     conn.sendall("Login ja existente")
