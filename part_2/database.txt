@@ -1,0 +1,4 @@
+<<<<<<< HEAD
+=======
+teste:testesenha
+>>>>>>> fb5690698cd43dcf58982c583d80e77a9c4a827b
