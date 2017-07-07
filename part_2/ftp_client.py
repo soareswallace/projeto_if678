@@ -1,5 +1,32 @@
 import socket
 import sys
+import pickle
+import getpass
+import struct
+
+def send_msg(sock, msg):
+    # Prefix each message with a 4-byte length (network byte order)
+    msg = struct.pack('>I', len(msg)) + msg
+    sock.sendall(msg)
+
+def recv_msg(sock):
+    # Read message length and unpack it into an integer
+    raw_msglen = recvall(sock, 4)
+    if not raw_msglen:
+        return None
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    # Read the message data
+    return recvall(sock, msglen)
+
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = ''.encode()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
 
 def init():
 	HOST = "localhost"
@@ -8,108 +35,49 @@ def init():
 	s.connect((HOST, PORT)) # conectando ao servidor
 	return [HOST, PORT, s]
 
+def funcLogin(opt, login, senha):
+    #Login
+    status = ""
+    while True:=
+        carry = {"option": opt, "login": login, "senha": senha}
+        data_string = pickle.dumps(carry, -1)    
+        send_msg(s, data_string)
+        status = recv_msg(s)
+        if (status == "err"):
+            if (opt == 1):
+                print ("Login ja existe.")
+            elif (opt == 2):
+                print ("Login ou senha incorretos.")
+        
+        elif (status == "ok"):
+            break
+        
+    print ("Logado!")
+    return
+
 def readCred():
-	login = raw_input("Digite seu login: ")
-	senha = raw_input("Digite sua senha: ")
-	return [login, senha]
-
-def menu():
-	opt = raw_input("\n1 - Criar login\n2 - Login\n3-Sair\nDigite opcao: ")
-	[login, senha] = readCred()
-	return [int(opt), login, senha]
-
-def send_string(str):
-	s.sendall(str) # enviando a string hello world
-	data = s.recv(1024) # esperando resposta do servidor
-	print (repr(data))
-	return data
-
-def send_file(fileName):
-	f = open(fileName,'rb')
-	l = f.read(1024)
-	while (l):
-	    print 'Enviando...'
-	    s.send(l)
-	    l = f.read(1024)
-	f.close()
-	print "Terminei de enviar"
-	s.shutdown(socket.SHUT_WR)
-	return
-
-def file_clnt():
-	opt = raw_input("\n1 - Upload\n2 - Download\n3-Sair\nDigite opcao: ")
-	fileName = raw_input("Digite o nome do arquivo (nome.formato): ")
-	str2send = opt + "@" + fileName + "@" + "trash"
-	data = send_string(str2send)
-	send_file(fileName)
-
-def conn_interface(opt, login, senha):
-	# Create login
-	if opt == 1:
-		while True:
-			str2send = str(opt) + "@" + login + "@" + senha
-			data = send_string(str2send)
-			if (repr(data) != "'Login ja existente!'"):
-				break
-			else:
-				[login, senha] = readCred()
-
-	# Login to existing accounts
-	if opt == 2:
-		while True:
-			str2send = str(opt) + "@" + login + "@" + senha
-			data = send_string(str2send)
-			if (repr(data) != "'Login ou senha incorretos!'"):
-				break
-			elif (repr(data) != "'Logado!'"):
-				[login, senha] = readCred()
-			else:
-				print "Bugou"
-				return
-
-	file_clnt()
-	return
+    opt = input("Digite opcao - 1 ou 2: ")
+    log = input("Digite login: ")
+    senha = getpass.getpass("Digite senha: ")
+    
+    return [opt, log, senha]
 
 #--Global variables-#
-opt = 0
-data = "l"
 [HOST, PORT, s] = init() # initialize
 #------------------#
 
 while True:
 	# --------------------------- CONNECTION ----------------------------------#
-	[opt, login, senha] = menu() # login (menu)
+	init()
+	[opt, login, senha] = readCred()
+	
 	if opt == 3:
 		break
-
-	###########CONNECTION INTERFACE##############
-	conn_interface(opt, login, senha)
-	############################################
-
-	#########          Login        ###########
-	# while True:
-	# 	print "Bem-vindo a Zuera"
-	# 	print "Escolha o arquivo"
-	# 	fileName = raw_input()
-	# 	print "O arquivo escolhido foi", fileName
-	# 	f = open(fileName, 'rb')
-	# 	print "Sending..."
-	# 	l = f.read(1024)
-	# 	while (l):
-	# 		print "Sending..."
-	# 		s.send(l)
-	# 		l = f.read(1024)
-	# 	f.close()
-	# 	s.shutdown(socket.SHUT_WR) #esse negocio chato
-	# 	print "Done Sending"
-	# 	data = s.recv(1024) # esperando resposta do servidor
-	# 	print "Servidor disse:", data
-	# opt = raw_input("Digite 3 para sair, qualquer outra coisa para continuar...\n")
-	#print 'Received', repr(data) # printa os dados recebidos
-	###########################################
-	#-----------------------------------------------------------------#
-
-	#--------------------SISTEMA DE ARQUIVOS--------------------------------#
+		
+	else:
+	    ###########CONNECTION INTERFACE##############
+	    funcLogin(opt, login, senha)
+	    ############################################
 
 	#--------------------------------------------------------------------------#
 s.close()

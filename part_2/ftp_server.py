@@ -2,39 +2,43 @@ import socket
 import sys
 import os
 import numpy as np
+import pickle
+import struct
+
+def send_msg(sock, msg):
+    # Prefix each message with a 4-byte length (network byte order)
+    msg = struct.pack('>I', len(msg)) + msg
+    sock.sendall(msg)
+
+def recv_msg(sock):
+    # Read message length and unpack it into an integer
+    raw_msglen = recvall(sock, 4)
+    if not raw_msglen:
+        return None
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    # Read the message data
+    return recvall(sock, msglen)
+
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = ''.encode()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
 
 with open('database.txt','r') as f:
     dataset = [tuple(map(str, i.rstrip('\r\n').split(' '))) for i in f]
-
-def compDebug((a,b), db):
-    print "oi"
-    for (login, senha) in db:
-        if (login, senha) == (a,b):
-            print "Igual"
-        else:
-            print senha+ "=="+ b+ "?"
 
 def init():
     HOST = ""                 # Nome Simbolico que significa todas as interfaces
     PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
-    s.listen(10) # Somente 1 conexao na fila eh aceita
+    s.listen(10)
     return [HOST, PORT, s, dataset]
-
-
-def recv_data(conn, addr):
-    data = conn.recv(1024)
-    if not data:
-        return [-1, "0", "0"]
-
-    data = data.replace(" ", "")
-    data = data.split('@')
-    option = int(data[0])
-    login = data[1]
-    senha = data[2]
-    print ("Recebi:",option, login, senha)
-    return [option, login, senha]
 
 
 def insert_db(t):
@@ -48,96 +52,41 @@ def insert_db(t):
 def create_dir(login):
     directory = "data/" + login + "/"
     if not os.path.exists(directory):
-        os.makedirs(directory, 0755)
+        os.makedirs(directory, 493)
     return directory
-
-
-def recv_file(directory, fileName, conn, addr):
-    f = open(directory + fileName, 'wb')
-    l = conn.recv(1024)
-    while (l):
-        print "Recebendo..."
-        f.write(l)
-        l = conn.recv(1024)
-    f.close()
-    print "Terminei de receber"
-    return
-
-def file_server(directory,conn, addr):
-    [opt, fileName, trash] = recv_data(conn, addr)
-    # upload (client -> server)
-    if (opt == 1):
-        conn.sendall("upload")
-        recv_file(directory, fileName, conn, addr)
-    # download (server -> client)
-    elif (opt == 2):
-        conn.sendall("download")
-
 
 
 [HOST, PORT, s, dataset] = init()
 while True:
     conn, addr = s.accept() # Aceita uma conexao e guarda o socket que representa a conexao em conn e adress em addr
-    print 'Conectado por: ', addr
+    print ('Conectado por: ', addr)
 
     while True:
-        [opt, login, senha] = recv_data(conn, addr)
-        if (opt == -1):
-            break
-
+        data = recv_msg(conn)
+        data_loaded = pickle.loads(data)
+        
         ################### LOGIN CREATION ########################
         login_db = [str(i[0]) for i in dataset]
-        if (opt == 1):
+        login = data_loaded["login"]
+        senha = data_loaded["senha"]
+        opt = data_loaded["option"]
+        if (opt == "1"):
             if login in login_db:
-                conn.sendall("Login ja existente!")
+                send_msg(conn, pickle.dumps("err",-1))
             else:
                 insert_db([login, senha])
                 directory = create_dir(login)
-                conn.sendall("Login inserido!")
-                file_server(directory, conn, addr)
+                send_msg(conn, pickle.dumps("ok",-1))
 
-        if (opt == 2):
-            compDebug((login,senha),dataset)
+        if (opt == "2"):
             # check if login matches password
             if (login, senha) not in dataset:
-                conn.sendall("Login ou senha incorretos!")
+                send_msg(conn, pickle.dumps("err",-1))
             else:
-                conn.sendall("Logado!")
+                send_msg(conn, pickle.dumps("ok",-1))
                 file_server("data/" + login + "/", conn, addr)
-        ###########################################################
-        # while login in dataset[:,0] and option == 1:
-        #     conn.sendall("Login ja existente")
-        #     data = conn.recv(1024)
-        #     if not data:
-        #         break
-        #     data = data.replace(" ", "")
-        #     data = data.split('@')
-        #     option = int(data[0])
-        #     login = data[1]
-        #     senha = data[2]
-        # if option == 1:
-        #     alloc = pd.DataFrame([{login,senha}])
-        #     alloc.to_csv("dontOpenPasswordsInside.csv", mode="a", header=False, index=False)
-        #     conn.sendall("Login criado com sucesso!")
-        # elif option == 2:
-        #     enviar_again = 1
-        #     while [login,senha] in dataset and enviar_again == 1:
-        #         f = open('recebido_ftp', 'wb')
-        #         conn.sendall("Logado!")
-        #         l = conn.recv(1024)
-        #         while(l):
-        #             f.write(l)
-        #             l = conn.recv(1024)
-        #         f.close()
-        #         print "Recebido pelo servidor"
-        #         conn.send('Recebi')
-        #         conn.send('Quer enviar mais um arquivo ? \n1 - Sim\n0 - Nao ')
-        #
-        #         enviar_again = conn.recv(1024)
-        #         if enviar_again == '1':
-        #             enviar_again = 1
-        #             conn.sendall("Logado!")
-        elif (opt == 3):
+        
+        elif (opt == "3"):
             conn.sendall("Fechando essa bagaca!")
 
     conn.close() # Fecha a conexao
