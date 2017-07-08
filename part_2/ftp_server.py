@@ -6,6 +6,7 @@ import pickle
 import struct
 
 def send_msg(sock, msg):
+    print ("tamanho da mensagem:", len(msg))
     # Prefix each message with a 4-byte length (network byte order)
     msg = struct.pack('>I', len(msg)) + msg
     sock.sendall(msg)
@@ -70,7 +71,7 @@ def fileServer(directory, conn):
     #download
     if (opt == "1"):
         file2save = recv_msg(conn)
-        file2save_loaded = pickle.dumps(file2save)
+        file2save_loaded = pickle.loads(file2save)
         f = open(directory + fileName, "wb")
         f.write(file2save_loaded)
         f.close()
