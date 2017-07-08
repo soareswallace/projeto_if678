@@ -4,6 +4,13 @@ import pickle
 import getpass
 import struct
 
+def init():
+	HOST = "localhost"
+	PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
+	s.connect((HOST, PORT)) # conectando ao servidor
+	return [HOST, PORT, s]
+	
 def send_msg(sock, msg):
     # Prefix each message with a 4-byte length (network byte order)
     msg = struct.pack('>I', len(msg)) + msg
@@ -28,43 +35,35 @@ def recvall(sock, n):
         data += packet
     return data
 
-def init():
-	HOST = "localhost"
-	PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
-	s.connect((HOST, PORT)) # conectando ao servidor
-	return [HOST, PORT, s]
-
-def funcLogin(opt, login, senha):
-    #Login
-    status = ""
-    while True:
-        #print ("Enviando", opt, login, senha)
-        carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
-        data_string = pickle.dumps(carry, -1)
-        send_msg(s, data_string)
-        status = recv_msg(s)
-        status_loaded = pickle.loads(status)
-        print (status_loaded["result"].decode())
-        break
-        if (status == "err"):
-            if (opt == 1):
-                print ("Login ja existe.")
-            elif (opt == 2):
-                print ("Login ou senha incorretos.")
-
-        elif (status == "ok"):
-            break
-
-    print ("Logado!")
-    return
-
 def readCred():
     opt = input("Digite opcao - 1 ou 2: ")
     log = input("Digite login: ")
     senha = getpass.getpass("Digite senha: ")
 
     return [opt, log, senha]
+    
+def funcLogin():
+    #Login
+    status = ""
+    while True:
+        [opt, login, senha] = readCred()
+        carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
+        data_string = pickle.dumps(carry, -1)
+        send_msg(s, data_string)
+        
+        status = recv_msg(s)
+        st = pickle.loads(status).decode()
+        
+        if (st == "err"):
+            if (opt == "1"):
+                print ("Login ja existe.")
+            elif (opt == "2"):
+                print ("Login ou senha incorretos.")
+        
+        elif (st == "ok"):
+            break
+    print ("Logado!")
+    return
 
 #--Global variables-#
 [HOST, PORT, s] = init() # initialize
@@ -73,15 +72,13 @@ def readCred():
 while True:
 	# --------------------------- CONNECTION ----------------------------------#
 	init()
-	[opt, login, senha] = readCred()
 
-	if opt == 3:
-		break
-
-	else:
-	    ###########CONNECTION INTERFACE##############
-	    funcLogin(opt, login, senha)
-	    ############################################
+	
+	##########CONNECTION INTERFACE##############
+	funcLogin()
+	fileServer()
+	
+	###########################################
 	break
 	#--------------------------------------------------------------------------#
 s.close()
