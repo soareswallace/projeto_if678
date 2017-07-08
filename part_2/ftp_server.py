@@ -50,11 +50,11 @@ def insert_db(t):
     f.close()
     return
 
-def create_dir(login):
-    directory = "data/" + login + "/"
+def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory, 493)
-    return directory
+        return directory
+    return "exfolder"
 
 def send_status(msg):
     carry = msg.encode()
@@ -82,6 +82,14 @@ def fileServer(directory, conn):
         byte_file = pickle.dumps(fileLoad, -1)
         send_msg(conn, byte_file)
         file2send.close()
+        
+    #create folder
+    if (opt == "3"):
+        print ("vou criar: ", directory + fileName)
+        st = create_dir(directory + fileName)
+        print("mandando: " ,st)
+        data = pickle.dumps(st.encode(),-1)
+        send_msg(conn, data)
     #share
     return
     
@@ -103,7 +111,7 @@ def loginInterface(conn):
                 send_status("err")
             else:
                 insert_db([login, senha])
-                directory = create_dir(login)
+                directory = create_dir("data/" + login + "/")
                 send_status("ok")
                 fileServer(directory, conn)
                 break

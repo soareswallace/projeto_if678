@@ -67,13 +67,29 @@ def funcLogin():
 
 def fileServer():
     #receive option
-    opt = input("1 - Upload\n2- Download\n4- Sair\nDigite opcao: ")
+    opt = input("1 - Upload\n2- Download\n3- Criar pasta\n4- Sair\nDigite opção: ")
     if (opt == "4"):
         carry = {"opt":opt.encode(), "fn":"".encode()}
         data_string = pickle.dumps(carry,-1)
         send_msg(s,data_string)
-        return 1
+        return 4
     
+    #create folder
+    if (opt == "3"):
+        folderName = input("Digite o nome da pasta: ")
+        carry = {"opt":opt.encode(), "fn":folderName.encode()} 
+        data_string = pickle.dumps(carry,-1)
+        send_msg(s,data_string)
+        st = recv_msg(s)
+        st_received = pickle.loads(st)
+        print(st_received)
+        if (st_received == "exfolder"):
+            print ("Já existe pasta com esse nome!")
+            return -1
+        
+        else:
+            return 3
+        
     fileName = input("Digite o nome do arquivo: ")
     carry = {"opt":opt.encode(), "fn":fileName.encode()}
     data_string = pickle.dumps(carry, -1)
@@ -93,7 +109,9 @@ def fileServer():
         file2recv = open("downloads/" + fileName, 'wb')
         file2recv.write(file_received)
         file2recv.close()
-    #share
+    
+    else:
+        return -1
     
     return 0
 
@@ -103,11 +121,17 @@ def fileServer():
 
 funcLogin()
 while True:
-	# --------------------------- CONNECTION ----------------------------------#
-	##########CONNECTION INTERFACE##############
-	ex = fileServer()
-	if (ex == 1):
-	    break
+    # --------------------------- CONNECTION ----------------------------------#
+    ##########CONNECTION INTERFACE##############
+    ex = fileServer()
+    if (ex == 4):
+        break
+        
+    elif (ex == 3):
+        print ("Pasta criada!")
+
+    elif(ex == -1):    
+        print ("Operação inválida!")
 	###########################################
 	#--------------------------------------------------------------------------#
 s.close()
