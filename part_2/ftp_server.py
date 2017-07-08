@@ -73,7 +73,7 @@ def fileServer(directory, conn):
         file2save_loaded = pickle.dumps(file2save)
         f = open(directory + fileName, "wb")
         f.write(file2save_loaded)
-    
+        f.close()
     #upload
         
     #share

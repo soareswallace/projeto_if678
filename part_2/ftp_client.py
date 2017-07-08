@@ -75,8 +75,10 @@ def fileServer():
     #upload
     if (opt == "1"):
         file2send = open(fileName, 'rb')
-        byte_file = pickle.dumps(file2send, -1)
+        fileLoad = file2send.read()
+        byte_file = pickle.dumps(fileLoad, -1)
         send_msg(s, byte_file)
+        file2send.close()
         
     #download
     elif (opt == "2"):
