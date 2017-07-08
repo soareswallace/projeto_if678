@@ -72,12 +72,18 @@ while True:
         opt = data_loaded["option"].decode()
         print(opt, login, senha)
         if (opt == "1"):
+            print("oi")
             if login in login_db:
-                send_msg(conn, pickle.dumps("err",-1))
+                carry = {"result": "err".encode('utf-8')}
+                data_string = pickle.dumps(carry, -1)
+                send_msg(conn, data_string)
             else:
                 insert_db([login, senha])
                 directory = create_dir(login)
-                send_msg(conn, pickle.dumps("ok",-1))
+                
+                carry = {"result": "ok".encode()}
+                data_string = pickle.dumps(carry, -1)
+                send_msg(conn, data_string)
 
         if (opt == "2"):
             # check if login matches password

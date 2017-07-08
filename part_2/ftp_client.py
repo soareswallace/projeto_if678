@@ -39,11 +39,14 @@ def funcLogin(opt, login, senha):
     #Login
     status = ""
     while True:
-        print ("Enviando", opt, login, senha)
+        #print ("Enviando", opt, login, senha)
         carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         status = recv_msg(s)
+        status_loaded = pickle.loads(status)
+        print (status_loaded["result"].decode())
+        break
         if (status == "err"):
             if (opt == 1):
                 print ("Login ja existe.")
@@ -79,6 +82,6 @@ while True:
 	    ###########CONNECTION INTERFACE##############
 	    funcLogin(opt, login, senha)
 	    ############################################
-
+	break
 	#--------------------------------------------------------------------------#
 s.close()
