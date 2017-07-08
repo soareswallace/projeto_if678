@@ -36,7 +36,7 @@ def recvall(sock, n):
     return data
 
 def readCred():
-    opt = input("Digite opcao - 1 ou 2: ")
+    opt = input("1 - Criar Login\n 2 - Logar\nDigite opcao: ")
     log = input("Digite login: ")
     senha = getpass.getpass("Digite senha: ")
 
@@ -63,6 +63,29 @@ def funcLogin():
         elif (st == "ok"):
             break
     print ("Logado!")
+    return
+
+def fileServer():
+    #receive option
+    opt = input("1 - Upload\n 2- Download\nDigite opcao: ")
+    fileName = input("Digite o nome do arquivo: ")
+    carry = {"opt":opt.encode(), "fn":fileName.encode()}
+    data_string = pickle.dumps(carry, -1)
+    send_msg(s, data_string)
+    #upload
+    if (opt == "1"):
+        file2send = open(fileName, 'rb')
+        byte_file = pickle.dumps(file2send, -1)
+        send_msg(s, byte_file)
+        
+    #download
+    elif (opt == "2"):
+        byte_file = recv_msg(s)
+        file_received = pickle.loads(byte_file, -1)
+        file2recv = open(fileName, 'wb')
+        file2recv.write(file_received)
+        file2recv.close()
+    #share
     return
 
 #--Global variables-#

@@ -61,12 +61,25 @@ def send_status(msg):
     send_msg(conn, data_string)
     return
 
-
-[HOST, PORT, s, dataset] = init()
-while True:
-    conn, addr = s.accept() # Aceita uma conexao e guarda o socket que representa a conexao em conn e adress em addr
-    print ('Conectado por: ', addr)
-
+def fileServer(directory, conn):
+    #receive option
+    data = recv_msg(conn)
+    data_loaded = pickle.loads(data)
+    opt = data_loaded["opt"].decode()
+    fileName = data_loaded["fn"].decode()
+    #download
+    if (opt == "1"):
+        file2save = recv_msg(conn)
+        file2save_loaded = pickle.dumps(file2save)
+        f = open(directory + fileName, "wb")
+        f.write(file2save_loaded)
+    
+    #upload
+        
+    #share
+    return
+    
+def loginInterface(conn):
     while True:
         data = recv_msg(conn)
         data_loaded = pickle.loads(data)
@@ -76,15 +89,16 @@ while True:
         login = data_loaded["login"].decode()
         senha = data_loaded["senha"].decode()
         opt = data_loaded["option"].decode()
-        print(opt, login, senha)
+     
         if (opt == "1"):
             if login in login_db:
                 send_status("err")
             else:
                 insert_db([login, senha])
                 directory = create_dir(login)
-                
                 send_status("ok")
+                fileServer(directory, conn)
+                break
 
         if (opt == "2"):
             # check if login matches password
@@ -92,9 +106,26 @@ while True:
                 send_status("err")
             else:
                 send_status("ok")
-                file_server("data/" + login + "/", conn, addr)
+                fileServer("data/" + login + "/", conn)
+                break
 
         elif (opt == "3"):
             conn.sendall("Fechando essa bagaca!")
+    return
 
+[HOST, PORT, s, dataset] = init()
+while True:
+    conn, addr = s.accept() # Aceita uma conexao e guarda o socket que representa a conexao em conn e adress em addr
+    print ('Conectado por: ', addr)
+
+    loginInterface(conn)
+    
+    
     conn.close() # Fecha a conexao
+    
+    
+    
+    
+    
+    
+    
