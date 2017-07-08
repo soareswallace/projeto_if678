@@ -88,6 +88,8 @@ def fileServer(directory, conn):
 def loginInterface(conn):
     while True:
         data = recv_msg(conn)
+        if(data is None):
+            return
         data_loaded = pickle.loads(data)
 
         ################### LOGIN CREATION ########################
@@ -115,8 +117,8 @@ def loginInterface(conn):
                 fileServer("data/" + login + "/", conn)
                 break
 
-        elif (opt == "3"):
-            conn.sendall("Fechando essa bagaca!")
+        elif (opt == "4"):
+            break
     return
 
 [HOST, PORT, s, dataset] = init()

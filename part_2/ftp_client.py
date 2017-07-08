@@ -36,7 +36,7 @@ def recvall(sock, n):
     return data
 
 def readCred():
-    opt = input("1 - Criar Login\n 2 - Logar\nDigite opcao: ")
+    opt = input("1 - Criar Login\n2 - Logar\nDigite opcao: ")
     log = input("Digite login: ")
     senha = getpass.getpass("Digite senha: ")
 
@@ -67,7 +67,13 @@ def funcLogin():
 
 def fileServer():
     #receive option
-    opt = input("1 - Upload\n 2- Download\nDigite opcao: ")
+    opt = input("1 - Upload\n2- Download\n4- Sair\nDigite opcao: ")
+    if (opt == "4"):
+        carry = {"opt":opt.encode(), "fn":"".encode()}
+        data_string = pickle.dumps(carry,-1)
+        send_msg(s,data_string)
+        return 1
+    
     fileName = input("Digite o nome do arquivo: ")
     carry = {"opt":opt.encode(), "fn":fileName.encode()}
     data_string = pickle.dumps(carry, -1)
@@ -84,26 +90,24 @@ def fileServer():
     elif (opt == "2"):
         byte_file = recv_msg(s)
         file_received = pickle.loads(byte_file)
-        file2recv = open(fileName, 'wb')
+        file2recv = open("downloads/" + fileName, 'wb')
         file2recv.write(file_received)
         file2recv.close()
     #share
-    return
+    
+    return 0
 
 #--Global variables-#
 [HOST, PORT, s] = init() # initialize
 #------------------#
 
+funcLogin()
 while True:
 	# --------------------------- CONNECTION ----------------------------------#
-	init()
-
-	
 	##########CONNECTION INTERFACE##############
-	funcLogin()
-	fileServer()
-	
+	ex = fileServer()
+	if (ex == 1):
+	    break
 	###########################################
-	break
 	#--------------------------------------------------------------------------#
 s.close()
