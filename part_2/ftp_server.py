@@ -76,7 +76,12 @@ def fileServer(directory, conn):
         f.write(file2save_loaded)
         f.close()
     #upload
-        
+    if (opt == "2"):
+        file2send = open(directory + fileName, 'rb')
+        fileLoad = file2send.read()
+        byte_file = pickle.dumps(fileLoad, -1)
+        send_msg(conn, byte_file)
+        file2send.close()
     #share
     return
     

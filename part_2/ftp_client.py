@@ -83,7 +83,7 @@ def fileServer():
     #download
     elif (opt == "2"):
         byte_file = recv_msg(s)
-        file_received = pickle.loads(byte_file, -1)
+        file_received = pickle.loads(byte_file)
         file2recv = open(fileName, 'wb')
         file2recv.write(file_received)
         file2recv.close()
