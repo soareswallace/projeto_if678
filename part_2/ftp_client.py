@@ -81,8 +81,8 @@ def fileServer():
         data_string = pickle.dumps(carry,-1)
         send_msg(s,data_string)
         st = recv_msg(s)
-        st_received = pickle.loads(st)
-        print(st_received)
+        st_received = pickle.loads(st).decode()
+        
         if (st_received == "exfolder"):
             print ("Já existe pasta com esse nome!")
             return -1

@@ -64,48 +64,56 @@ def send_status(msg):
 
 def fileServer(directory, conn):
     #receive option
-    data = recv_msg(conn)
-    data_loaded = pickle.loads(data)
-    opt = data_loaded["opt"].decode()
-    fileName = data_loaded["fn"].decode()
-    #download
-    if (opt == "1"):
-        file2save = recv_msg(conn)
-        file2save_loaded = pickle.loads(file2save)
-        f = open(directory + fileName, "wb")
-        f.write(file2save_loaded)
-        f.close()
-    #upload
-    if (opt == "2"):
-        file2send = open(directory + fileName, 'rb')
-        fileLoad = file2send.read()
-        byte_file = pickle.dumps(fileLoad, -1)
-        send_msg(conn, byte_file)
-        file2send.close()
+    while True:
+        data = recv_msg(conn)
+        data_loaded = pickle.loads(data)
         
-    #create folder
-    if (opt == "3"):
-        print ("vou criar: ", directory + fileName)
-        st = create_dir(directory + fileName)
-        print("mandando: " ,st)
-        data = pickle.dumps(st.encode(),-1)
-        send_msg(conn, data)
-    #share
-    return
+        if (data is None):
+            break
+        
+        opt = data_loaded["opt"].decode()
+        fileName = data_loaded["fn"].decode()
+        print (opt, fileName)
+        #download
+        if (opt == "1"):
+            file2save = recv_msg(conn)
+            file2save_loaded = pickle.loads(file2save)
+            f = open(directory + fileName, "wb")
+            f.write(file2save_loaded)
+            f.close()
+        #upload
+        if (opt == "2"):
+            file2send = open(directory + fileName, 'rb')
+            fileLoad = file2send.read()
+            byte_file = pickle.dumps(fileLoad, -1)
+            send_msg(conn, byte_file)
+            file2send.close()
+            
+        #create folder
+        if (opt == "3"):
+            print ("vou criar: ", directory + fileName)
+            st = create_dir(directory + fileName)
+            print("mandando: " ,st)
+            data = pickle.dumps(st.encode(),-1)
+            send_msg(conn, data)
+        #share
+        if (opt == "4"):
+            break
+    return -1
     
 def loginInterface(conn):
     while True:
         data = recv_msg(conn)
-        if(data is None):
-            return
+        if (data is None):
+            break
         data_loaded = pickle.loads(data)
-
+        
         ################### LOGIN CREATION ########################
         login_db = [str(i[0]) for i in dataset]
         login = data_loaded["login"].decode()
         senha = data_loaded["senha"].decode()
         opt = data_loaded["option"].decode()
-     
+        ex = 0
         if (opt == "1"):
             if login in login_db:
                 send_status("err")
@@ -113,7 +121,7 @@ def loginInterface(conn):
                 insert_db([login, senha])
                 directory = create_dir("data/" + login + "/")
                 send_status("ok")
-                fileServer(directory, conn)
+                ex = fileServer(directory, conn)
                 break
 
         if (opt == "2"):
@@ -122,10 +130,10 @@ def loginInterface(conn):
                 send_status("err")
             else:
                 send_status("ok")
-                fileServer("data/" + login + "/", conn)
+                ex = fileServer("data/" + login + "/", conn)
                 break
 
-        elif (opt == "4"):
+        if (ex == "-1"):
             break
     return
 
@@ -135,7 +143,6 @@ while True:
     print ('Conectado por: ', addr)
 
     loginInterface(conn)
-    
     
     conn.close() # Fecha a conexao
     
