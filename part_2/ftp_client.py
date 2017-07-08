@@ -38,9 +38,10 @@ def init():
 def funcLogin(opt, login, senha):
     #Login
     status = ""
-    while True:=
-        carry = {"option": opt, "login": login, "senha": senha}
-        data_string = pickle.dumps(carry, -1)    
+    while True:
+        print ("Enviando", opt, login, senha)
+        carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
+        data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         status = recv_msg(s)
         if (status == "err"):
@@ -48,10 +49,10 @@ def funcLogin(opt, login, senha):
                 print ("Login ja existe.")
             elif (opt == 2):
                 print ("Login ou senha incorretos.")
-        
+
         elif (status == "ok"):
             break
-        
+
     print ("Logado!")
     return
 
@@ -59,7 +60,7 @@ def readCred():
     opt = input("Digite opcao - 1 ou 2: ")
     log = input("Digite login: ")
     senha = getpass.getpass("Digite senha: ")
-    
+
     return [opt, log, senha]
 
 #--Global variables-#
@@ -70,10 +71,10 @@ while True:
 	# --------------------------- CONNECTION ----------------------------------#
 	init()
 	[opt, login, senha] = readCred()
-	
+
 	if opt == 3:
 		break
-		
+
 	else:
 	    ###########CONNECTION INTERFACE##############
 	    funcLogin(opt, login, senha)

@@ -64,12 +64,13 @@ while True:
     while True:
         data = recv_msg(conn)
         data_loaded = pickle.loads(data)
-        
+
         ################### LOGIN CREATION ########################
         login_db = [str(i[0]) for i in dataset]
-        login = data_loaded["login"]
-        senha = data_loaded["senha"]
-        opt = data_loaded["option"]
+        login = data_loaded["login"].decode()
+        senha = data_loaded["senha"].decode()
+        opt = data_loaded["option"].decode()
+        print(opt, login, senha)
         if (opt == "1"):
             if login in login_db:
                 send_msg(conn, pickle.dumps("err",-1))
@@ -85,7 +86,7 @@ while True:
             else:
                 send_msg(conn, pickle.dumps("ok",-1))
                 file_server("data/" + login + "/", conn, addr)
-        
+
         elif (opt == "3"):
             conn.sendall("Fechando essa bagaca!")
 
