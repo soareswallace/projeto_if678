@@ -124,7 +124,6 @@ def loginInterface(conn,addr):
             break
         data_loaded = pickle.loads(data)
         
-        print ("oi3")
         ################### LOGIN CREATION ########################
         login_db = [str(i[0]) for i in dataset]
         login = data_loaded["login"].decode()
@@ -160,7 +159,6 @@ def loginInterface(conn,addr):
 while True:
     conn, addr = s.accept()
     print ("Conectado por: ", addr[0])
-    print ("oi")
     thread = threading.Thread(target = loginInterface, args=(conn,addr))
     thread.start()
     
