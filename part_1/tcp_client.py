@@ -1,18 +1,18 @@
 import socket
 import sys
 
-# Create a TCP/IP socket
+#Criando um socket TCP
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Connect the socket to the port where the server is listening
+#connectando o socket a um servidor que esteja escutando a porta descrita
 server_address = ('localhost', 10000)
 print >>sys.stderr, 'connecting to %s port %s' % server_address
 sock.connect(server_address)
 try:
 
     # Send data
-    message = 'This is the message.  It will be repeated.'
-    print >>sys.stderr, 'sending "%s"' % message
+    message = 'Esta eh a mensagem que sera repetida.'
+    print >>sys.stderr, 'Enviando %s"' % message
     sock.sendall(message)
 
     # Look for the response
@@ -22,8 +22,8 @@ try:
     while amount_received < amount_expected:
         data = sock.recv(16)
         amount_received += len(data)
-        print >>sys.stderr, 'received "%s"' % data
+        print >>sys.stderr, 'Mensagem recebida "%s"' % data
 
 finally:
-    print >>sys.stderr, 'closing socket'
+    print >>sys.stderr, 'Socket sendo fechada'
     sock.close()
