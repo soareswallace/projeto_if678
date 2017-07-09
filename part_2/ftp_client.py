@@ -83,12 +83,12 @@ def upload(fileSrc, s):
 
 def fileServer():
     #receive option
-    opt = input("1 - Upload\n2- Download\n3- Criar pasta\n4- Sair\nDigite opção: ")
-    if (opt == "4"):
+    opt = input("1 - Upload\n2- Download\n3- Criar pasta\n4- Compartilhar arquivos\n5- Sair\nDigite opção: ")
+    if (opt == "5"):
         carry = {"opt":opt.encode()}
         data_string = pickle.dumps(carry,-1)
         send_msg(s,data_string)
-        return 4
+        return 5
     
     #create folder
     if (opt == "3"):
@@ -142,7 +142,7 @@ while True:
     # --------------------------- CONNECTION ----------------------------------#
     ##########CONNECTION INTERFACE##############
     ex = fileServer()
-    if (ex == 4):
+    if (ex == 5):
         break
         
     elif (ex == 3):

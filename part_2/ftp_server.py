@@ -109,7 +109,7 @@ def fileServer(directory, conn):
             send_msg(conn, data)
             
         #share
-        if (opt == "4"):
+        if (opt == "5"):
             break
     return -1
     
