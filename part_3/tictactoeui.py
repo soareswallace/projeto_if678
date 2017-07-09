@@ -14,8 +14,8 @@ class Game():
         self.player = Block.AVAILABLE
         self.screen = pygame.display.set_mode(SIZE)
         # Main Page
-        # self.btn_start = MySprite("start.png", [150,50])
-        # self._draw_main()
+        self.btn_start = MySprite("start.png", [50,225])
+        self._draw_main()
         # Stuff
         self.board = [
             None,
@@ -29,18 +29,19 @@ class Game():
             Block(8, [155,205]),
             Block(9, [255,205]),
         ]
-        #self.btn_restart = MySprite("revanche.png", [75,100])
-        #self.btn_leave = MySprite("sair.png", [225,100])
+        self.btn_restart = MySprite("revanche.png", [75,100])
+        self.btn_leave = MySprite("sair.png", [225,100])
         self.txt_win = MySprite("ganhou.png", [50,50])
+        self.txt_draw = MySprite("empatou.png", [50,50])
         self.txt_lose = MySprite("perdeu.png", [50,50])
-        # self.txt_turn = MySprite("suavez.png", [50,50])
-        # self.txt_wait = MySprite("aguardando.png", [50,50])
+        self.txt_turn = MySprite("suavez.png", [50,50])
+        self.txt_wait = MySprite("aguardando.png", [50,50])
         # Accept Input
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP: self._handle_click(event)
                 elif event.type == pygame.USEREVENT: self._handle_userevent(event)
-                elif event.type == pygame.QUIT: sys.exit()
+                elif event.type == pygame.QUIT: self.exit_safely()
 
     def _clean_board(self):
         # Draw black board
@@ -58,13 +59,11 @@ class Game():
             self._draw_sprite(block)
         # Messages
         if self.may_move():
-            # Sua vez
-            pass
+            self._draw_sprite(self.txt_turn)
         elif self.may_continue():
             pass
         else:
-            # Aguardando oponente
-            pass
+            self._draw_sprite(self.txt_wait)
 
         pygame.display.flip()
 
@@ -77,10 +76,12 @@ class Game():
         self._clean_board()
         if self.player == winner:
             self._draw_sprite(self.txt_win)
+        elif self.player == 0:
+            self._draw_sprite(self.txt_draw)
         else:
             self._draw_sprite(self.txt_lose)
-        # self._draw_sprite(self.btn_restart)
-        # self._draw_sprite(self.btn_leave)
+        self._draw_sprite(self.btn_restart)
+        self._draw_sprite(self.btn_leave)
         self._draw_board()
 
     def _draw_sprite(self, sprite):
@@ -103,14 +104,14 @@ class Game():
                         self.set_status(self.WAIT)
                         self._draw_board()
                         self.check_winner(self.player)
-                        print(self.player)
             elif self.may_continue():
                 print("GAME OVER")
                 pass
+        elif event.button == 3:
+            print("DEBUG:")
+            import pdb; pdb.set_trace()
 
     def _handle_userevent(self, event):
-        # pass
-        import pdb; pdb.set_trace()
         if event.mode == "init":
             self.player = event.player
             if self.player == 1:
@@ -120,7 +121,34 @@ class Game():
         elif event.mode == "move":
             pass
         elif event.mode == "invalid":
-            sys.exit()
+            self.exit_safely()
+        self._draw_board()
+
+    def check_draw(self):
+        for block in self.get_blocks():
+            if block.status == 0:
+                return False
+        return True
+
+    def check_winner(self, player):
+        # Checks if player won the game
+        if ((self.board[7].marked_by(player) and self.board[8].marked_by(player) and self.board[9].marked_by(player)) or  # across the top
+            (self.board[4].marked_by(player) and self.board[5].marked_by(player) and self.board[6].marked_by(player)) or  # across the middle
+            (self.board[1].marked_by(player) and self.board[2].marked_by(player) and self.board[3].marked_by(player)) or  # across the bottom
+            (self.board[7].marked_by(player) and self.board[4].marked_by(player) and self.board[1].marked_by(player)) or  # down the left side
+            (self.board[8].marked_by(player) and self.board[5].marked_by(player) and self.board[2].marked_by(player)) or  # down the middle
+            (self.board[9].marked_by(player) and self.board[6].marked_by(player) and self.board[3].marked_by(player)) or  # down the right side
+            (self.board[7].marked_by(player) and self.board[5].marked_by(player) and self.board[3].marked_by(player)) or  # diagonal
+            (self.board[9].marked_by(player) and self.board[5].marked_by(player) and self.board[1].marked_by(player))  # diagonal
+                ):
+            self.set_status(self.CONTINUE)
+            self._draw_result(player)
+        elif (self.check_draw()):
+            self.set_status(self.CONTINUE)
+            self._draw_result(0)
+
+    def exit_safely(self):
+        sys.exit()
 
     def get_foe_num(self):
         return (self.player % 2) + 1
@@ -152,20 +180,6 @@ class Game():
             }
         )
         pygame.event.post(event)
-
-    def check_winner(self, player):
-        # Checks if player won the game
-        if ((self.board[7].marked_by(player) and self.board[8].marked_by(player) and self.board[9].marked_by(player)) or  # across the top
-            (self.board[4].marked_by(player) and self.board[5].marked_by(player) and self.board[6].marked_by(player)) or  # across the middle
-            (self.board[1].marked_by(player) and self.board[2].marked_by(player) and self.board[3].marked_by(player)) or  # across the bottom
-            (self.board[7].marked_by(player) and self.board[4].marked_by(player) and self.board[1].marked_by(player)) or  # down the left side
-            (self.board[8].marked_by(player) and self.board[5].marked_by(player) and self.board[2].marked_by(player)) or  # down the middle
-            (self.board[9].marked_by(player) and self.board[6].marked_by(player) and self.board[3].marked_by(player)) or  # down the right side
-            (self.board[7].marked_by(player) and self.board[5].marked_by(player) and self.board[3].marked_by(player)) or  # diagonal
-            (self.board[9].marked_by(player) and self.board[5].marked_by(player) and self.board[1].marked_by(player))  # diagonal
-                ):
-            self.set_status(self.CONTINUE)
-            self._draw_result(player)
 
 
 class MySprite(pygame.sprite.Sprite):
