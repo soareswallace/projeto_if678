@@ -4,6 +4,8 @@ import pickle
 import getpass
 import struct
 
+#!-*- conding: utf8 -*-
+
 def init():
 	HOST = "localhost"
 	PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
@@ -83,7 +85,7 @@ def upload(fileSrc, s):
 
 def fileServer():
     #receive option
-    opt = input("1 - Upload\n2- Download\n3- Criar pasta\n4- Compartilhar arquivos\n5- Sair\nDigite opção: ")
+    opt = input("1- Upload\n2- Download\n3- Criar pasta\n4- Compartilhar arquivos\n5- Sair\nDigite opcao: ")
     if (opt == "5"):
         carry = {"opt":opt.encode()}
         data_string = pickle.dumps(carry,-1)
@@ -100,7 +102,7 @@ def fileServer():
         st_received = pickle.loads(st).decode()
         
         if (st_received == "exfolder"):
-            print ("Já existe pasta com esse nome!")
+            print ("Ja existe pasta com esse nome!")
             return -1
         
         else:
@@ -149,7 +151,7 @@ while True:
         print ("Pasta criada!")
 
     elif(ex == -1):    
-        print ("Operação inválida!")
+        print ("Operacao invalida!")
 	###########################################
 	#--------------------------------------------------------------------------#
 s.close()

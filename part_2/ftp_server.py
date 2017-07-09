@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pickle
 import struct
+from threading import Thread
 
 def send_msg(sock, msg):
     print ("tamanho da mensagem:", len(msg))
@@ -34,7 +35,7 @@ with open('database.txt','r') as f:
     dataset = [tuple(map(str, i.rstrip('\r\n').split(' '))) for i in f]
 
 def init():
-    HOST = ""                 # Nome Simbolico que significa todas as interfaces
+    HOST = ""                # Nome Simbolico que significa todas as interfaces
     PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
@@ -113,7 +114,7 @@ def fileServer(directory, conn):
             break
     return -1
     
-def loginInterface(conn):
+def loginInterface(conn,addr):
     while True:
         data = recv_msg(conn)
         if (data is None):
@@ -150,15 +151,21 @@ def loginInterface(conn):
     return
 
 [HOST, PORT, s, dataset] = init()
-while True:
-    conn, addr = s.accept() # Aceita uma conexao e guarda o socket que representa a conexao em conn e adress em addr
-    print ('Conectado por: ', addr)
+trds = []
+clients = []
+for i in range(10): 
+    conn, addr = s.accept() 
+    print ("Conectado por: ", conn, addr)
+    clients.append(addr)
+    t = Thread(target=loginInterface, args = (conn, addr))
+    trds.append(t)
+    t.start()
+    
 
-    loginInterface(conn)
-    
-    conn.close() # Fecha a conexao
-    
-    
+for t in trds:
+    t.join()
+
+s.close()
     
     
     
