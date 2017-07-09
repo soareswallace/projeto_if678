@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pickle
 import struct
+import threading
 from threading import Thread
 
 def send_msg(sock, msg):
@@ -116,6 +117,8 @@ def fileServer(directory, conn):
     
 def loginInterface(conn,addr):
     while True:
+        sema = threading.Lock()
+        sema.acquire()
         data = recv_msg(conn)
         if (data is None):
             break
@@ -148,6 +151,7 @@ def loginInterface(conn,addr):
 
         if (ex == "-1"):
             break
+        sema.release()
     return
 
 [HOST, PORT, s, dataset] = init()
