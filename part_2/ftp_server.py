@@ -62,25 +62,33 @@ def send_status(msg):
     send_msg(conn, data_string)
     return
 
+def download(fileDst, conn):
+    file2save = recv_msg(conn)
+    file2save_loaded = pickle.loads(file2save)
+    f = open(fileDst, "wb")
+    f.write(file2save_loaded)
+    f.close()
+    return
+
+
 def fileServer(directory, conn):
     #receive option
     while True:
         data = recv_msg(conn)
-        data_loaded = pickle.loads(data)
         
         if (data is None):
             break
+            
+        data_loaded = pickle.loads(data)
+        
         
         opt = data_loaded["opt"].decode()
-        fileName = data_loaded["fn"].decode()
-        print (opt, fileName)
         #download
         if (opt == "1"):
-            file2save = recv_msg(conn)
-            file2save_loaded = pickle.loads(file2save)
-            f = open(directory + fileName, "wb")
-            f.write(file2save_loaded)
-            f.close()
+            folderName = data_loaded["foldername"].decode()
+            fileName = data_loaded["fn"].decode()
+            download(directory + folderName +"/"+ fileName, conn)
+            
         #upload
         if (opt == "2"):
             file2send = open(directory + fileName, 'rb')

@@ -89,9 +89,10 @@ def fileServer():
         
         else:
             return 3
-        
+            
+    folderName = input("Digite o nome da pasta: ")
     fileName = input("Digite o nome do arquivo: ")
-    carry = {"opt":opt.encode(), "fn":fileName.encode()}
+    carry = {"opt":opt.encode(), "foldername": folderName.encode(),"fn":fileName.encode()}
     data_string = pickle.dumps(carry, -1)
     send_msg(s, data_string)
     #upload
