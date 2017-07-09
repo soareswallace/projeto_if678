@@ -34,12 +34,12 @@ class Game():
         self.txt_win = MySprite("ganhou.png", [50,50])
         self.txt_lose = MySprite("perdeu.png", [50,50])
         # self.txt_turn = MySprite("suavez.png", [50,50])
-        # self.txt_wait1 = MySprite("aguardando.png", [50,50])
-        # self.txt_wait2 = MySprite("adversario.png", [50,100])
+        # self.txt_wait = MySprite("aguardando.png", [50,50])
         # Accept Input
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP: self._handle_click(event)
+                elif event.type == pygame.USEREVENT: self._handle_userevent(event)
                 elif event.type == pygame.QUIT: sys.exit()
 
     def _clean_board(self):
@@ -54,15 +54,18 @@ class Game():
         pygame.draw.line(self.screen, WHITE, (150,200), (150,500), 9)  # Left line
         pygame.draw.line(self.screen, WHITE, (250,200), (250,500), 9)  # Right line
         # Draw blocks
-        for block in self.board:
-            if block is not None:
-                self._draw_sprite(block)
+        for block in self.get_blocks():
+            self._draw_sprite(block)
         # Messages
         if self.may_move():
-            text = pygame.image.load("ganhou.png")
+            # Sua vez
+            pass
+        elif self.may_continue():
+            pass
         else:
-            text = pygame.image.load("perdeu.png")
-        self.screen.blit(text, text.get_rect().move([50,50]))
+            # Aguardando oponente
+            pass
+
         pygame.display.flip()
 
     def _draw_main(self):
@@ -78,7 +81,7 @@ class Game():
             self._draw_sprite(self.txt_lose)
         # self._draw_sprite(self.btn_restart)
         # self._draw_sprite(self.btn_leave)
-        pygame.display.flip()
+        self._draw_board()
 
     def _draw_sprite(self, sprite):
         self.screen.blit(sprite.image, sprite.rect)
@@ -86,24 +89,46 @@ class Game():
     def _handle_click(self, event):
         if event.button == 1:
             if self.may_start():
+                print("COMEÇOU")
                 # Começa o jogo
-                # self.set_status(self.WAIT)
-                self.set_status(self.TURN)
-                # self.subscribe()
+                self.set_status(self.WAIT)
                 self._draw_board()
+                self.subscribe()
             elif self.may_move():
+                print("TENTOU JOGAR")
                 # Jogadas
-                for block in self.board:
-                    if block is not None and block.click_collided(event.pos) and block.update(self.player):
-                        # self.set_status(self.WAIT)
+                for block in self.get_blocks():
+                    if block.click_collided(event.pos) and block.update(self.player):
+                        print("JOGOU")
+                        self.set_status(self.WAIT)
                         self._draw_board()
                         self.check_winner(self.player)
                         print(self.player)
             elif self.may_continue():
+                print("GAME OVER")
                 pass
+
+    def _handle_userevent(self, event):
+        # pass
+        import pdb; pdb.set_trace()
+        if event.mode == "init":
+            self.player = event.player
+            if self.player == 1:
+                self.set_status(self.TURN)
+        elif event.mode == "sync":
+            pass
+        elif event.mode == "move":
+            pass
+        elif event.mode == "invalid":
+            sys.exit()
 
     def get_foe_num(self):
         return (self.player % 2) + 1
+
+    def get_blocks(self):
+        for block in self.board:
+            if block is not None:
+                yield block
 
     def may_continue(self):
         return self.status == self.CONTINUE
@@ -119,6 +144,14 @@ class Game():
 
     def subscribe(self):
         print("UDP confiavel pro servidor: Quero jogar")
+        event = pygame.event.Event(
+            pygame.USEREVENT,
+            {
+                "mode": "init",
+                "player": 1,
+            }
+        )
+        pygame.event.post(event)
 
     def check_winner(self, player):
         # Checks if player won the game
@@ -152,7 +185,7 @@ class Block(MySprite):
     PLAYER2 = 2
 
     def __init__(self, id_, shift):
-        MySprite.__init__(self, "player2.png", shift)
+        MySprite.__init__(self, "player0.png", shift)
         self.id = id_
         self.status = self.AVAILABLE
 
