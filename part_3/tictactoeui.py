@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import pygame
+import queue
 import sys
+import socket
+import threading
 
 SIZE = WIDTH, HEIGHT = 400, 550
 WHITE = pygame.Color("white")
@@ -10,6 +14,12 @@ class Game():
 
     def __init__(self):
         self.screen = pygame.display.set_mode(SIZE)
+        # Sockets
+        self.send_queue = queue.Queue()
+        self.sender = Sender(self.send_queue)
+        self.receiver = Receiver(self)
+        self.sender.start()
+        self.receiver.start()
         # Main Page
         self.set_main()
         # Stuff
@@ -69,13 +79,15 @@ class Game():
 
     def _draw_result(self, winner):
         self._clean_board()
+        self.winner = winner
         if winner == self.player:
             self._draw_sprite(self.txt_win)
         elif winner == 0:
             self._draw_sprite(self.txt_draw)
         else:
             self._draw_sprite(self.txt_lose)
-        self._draw_sprite(self.btn_restart)
+        if self.restart:
+            self._draw_sprite(self.btn_restart)
         self._draw_sprite(self.btn_leave)
         self._draw_board()
 
@@ -87,23 +99,36 @@ class Game():
             if self.may_start():
                 print("COMEÇOU")
                 # Começa o jogo
+                self.restart = True
+                self.rematch = False
                 self.set_status(self.WAIT)
                 self.draw_board()
-                self.subscribe()
+                self.receiver.resume()
             elif self.may_move():
                 print("TENTOU JOGAR")
                 # Jogadas
                 for block in self.get_blocks():
                     if block.click_collided(event.pos) and block.update(self.player):
                         print("JOGOU")
+                        self.queue_put({
+                            "mode": "move",
+                            "block": block.id
+                        })
                         self.set_status(self.WAIT)
                         self.check_winner(self.player)
             elif self.may_continue():
                 if self.btn_leave.click_collided(event.pos):
                     print("RECOMEÇOU")
+                    self.queue_put({
+                        "mode": "quit"
+                    })
                     self.set_main()
-                if self.btn_restart.click_collided(event.pos):
+                    self.receiver.pause()
+                if self.restart and self.btn_restart.click_collided(event.pos):
                     print("REVANCHE")
+                    self.queue_put({
+                        "mode": "rematch"
+                    })
                     self.reinit()
 
         elif event.button == 3:
@@ -115,6 +140,7 @@ class Game():
         if event.mode == "init":
             self.player = event.player
             self.foe = (self.player % 2) + 1
+            self.foe_addr = tuple(event.addr)
             if self.player == 1:
                 self.set_status(self.TURN)
             self.draw_board()
@@ -122,7 +148,19 @@ class Game():
             self.board[event.block].update(self.foe)
             self.set_status(self.TURN)
             self.check_winner(self.foe)
-        elif event.mode == "invalid":
+        elif event.mode == "rematch":
+            self.do_rematch(self.CONTINUE)
+            if not self.rematch:
+                self.draw_board()
+        elif event.mode == "quit":
+            if self.rematch:
+                self.set_main()
+            else:
+                self.restart = False
+                self.foe_addr = None
+                self.finish(self.winner)
+            self.receiver.pause()
+        else:
             self.exit_safely()
 
     def check_draw(self):
@@ -142,20 +180,23 @@ class Game():
             (self.board[7].marked_by(player) and self.board[5].marked_by(player) and self.board[3].marked_by(player)) or  # diagonal
             (self.board[9].marked_by(player) and self.board[5].marked_by(player) and self.board[1].marked_by(player))  # diagonal
                 ):
-            self.set_status(self.CONTINUE)
-            self._draw_result(player)
+            self.finish(player)
         elif self.check_draw():
-            self.set_status(self.CONTINUE)
-            self._draw_result(0)
+            self.finish(Block.AVAILABLE)
         else:
             self.draw_board()            
 
     def draw_board(self):
         self._clean_board()
-        self._draw_board()    
+        self._draw_board()
 
     def exit_safely(self):
+        self.thread_stop()
         sys.exit()
+
+    def finish(self, player):
+        self.set_status(self.CONTINUE)
+        self._draw_result(player)
 
     def get_blocks(self):
         for block in self.board:
@@ -178,14 +219,36 @@ class Game():
         )
         pygame.event.post(event)
 
+    def queue_put(self, obj):
+        if self.foe_addr is not None:
+            self.send_queue.put({
+                "addr": self.foe_addr,
+                "data": json.dumps(obj)
+            })
+        else:
+            print("OPONENTE NAO ENCONTRADO")
+
     def reinit(self):
         for block in self.get_blocks():
             block.update(Block.AVAILABLE, True)
-        self.set_status(self.player)
+        temp = self.player
+        self.player = self.foe
+        self.foe = temp
+
+        self.do_rematch(self.WAIT)
 
         self.draw_board()
 
+    def do_rematch(self, false_status):
+        if self.rematch:
+            self.set_status(self.foe)
+            self.rematch = False
+        else:
+            self.set_status(false_status)
+            self.rematch = True
+
     def set_main(self):
+        self.foe_addr = None
         self.set_status(self.START)
         self.player = Block.AVAILABLE
         self.foe = Block.AVAILABLE
@@ -199,12 +262,9 @@ class Game():
     def set_status(self, status):
         self.status = status
 
-    def subscribe(self):
-        print("UDP confiavel pro servidor: Quero jogar")
-        self.post_event({
-                "mode": "init",
-                "player": 1,
-            })
+    def thread_stop(self):
+        self.receiver.stop()
+        self.sender.stop()
 
 
 class MySprite(pygame.sprite.Sprite):
@@ -240,6 +300,69 @@ class Block(MySprite):
             self.image = pygame.image.load("player{}.png".format(player))
             return True
         return False
+
+
+class Sender(threading.Thread):
+    def __init__(self, to_send):
+        self.queue = to_send
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        threading.Thread.__init__(self)
+
+    def stop(self):
+        self.runninng = 0
+
+    def run(self):
+        self.runninng = 1
+        while self.runninng:
+            try: 
+                obj = self.queue.get(True, 10)
+                self.sock.sendto(obj["data"].encode(), obj["addr"])
+            except queue.Empty:
+                pass
+
+        self.sock.close()
+
+
+class Receiver(threading.Thread):
+    def __init__(self, game):
+        self.game = game
+        self.state = threading.Condition()
+        self.paused = True
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        threading.Thread.__init__(self)
+
+    def stop(self):
+        self.runninng = 0
+
+    def run(self):
+        self.runninng = 1       
+        while self.runninng:
+            with self.state:
+                if self.paused:
+                    print("PAUSOU")
+                    self.state.wait()
+                    print("VOLTOU")
+
+            data, addr = self.sock.recvfrom(4096)
+            print(data.decode())
+            self.game.post_event(json.loads(data.decode()))
+
+        self.sock.close()
+
+    def _subscribe(self):
+        self.sock.sendto("{}".encode(), ("localhost", 7777))
+
+    def resume(self):
+        with self.state:
+            self.paused = False
+            self._subscribe()
+            self.state.notify()  # unblock self if waiting
+
+    def pause(self):
+        with self.state:
+            self.paused = True  # make self block and wait
 
 
 if __name__ == "__main__":
