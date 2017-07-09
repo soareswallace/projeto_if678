@@ -70,19 +70,25 @@ def download(fileDst, conn):
     f.close()
     return
 
+def upload(fileSrc, conn):
+    file2send = open(fileSrc, 'rb')
+    fileLoad = file2send.read()
+    byte_file = pickle.dumps(fileLoad, -1)
+    send_msg(conn, byte_file)
+    file2send.close()
+    return
+
 
 def fileServer(directory, conn):
     #receive option
     while True:
         data = recv_msg(conn)
-        
         if (data is None):
             break
-            
         data_loaded = pickle.loads(data)
         
-        
         opt = data_loaded["opt"].decode()
+        
         #download
         if (opt == "1"):
             folderName = data_loaded["foldername"].decode()
@@ -91,19 +97,17 @@ def fileServer(directory, conn):
             
         #upload
         if (opt == "2"):
-            file2send = open(directory + fileName, 'rb')
-            fileLoad = file2send.read()
-            byte_file = pickle.dumps(fileLoad, -1)
-            send_msg(conn, byte_file)
-            file2send.close()
+            folderName = data_loaded["foldername"].decode()
+            fileName = data_loaded["fn"].decode()
+            upload(directory + folderName + "/" + fileName, conn)
             
         #create folder
         if (opt == "3"):
-            print ("vou criar: ", directory + fileName)
-            st = create_dir(directory + fileName)
-            print("mandando: " ,st)
+            folderName = data_loaded["foldername"].decode()
+            st = create_dir(directory + folderName)
             data = pickle.dumps(st.encode(),-1)
             send_msg(conn, data)
+            
         #share
         if (opt == "4"):
             break
