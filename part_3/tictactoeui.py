@@ -13,6 +13,8 @@ class Game():
     START, WAIT, TURN, CONTINUE = 0, 1, 2, 3
 
     def __init__(self):
+        self.signalCountSend = 1
+        self.signalCountRecive = 1
         self.screen = pygame.display.set_mode(SIZE)
         # Sockets
         self.send_queue = queue.Queue()
@@ -44,6 +46,7 @@ class Game():
         self.txt_wait = MySprite("aguardando.png", [50,50])
         # Accept Input
         while True:
+            self._test_connection();
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP: self._handle_click(event)
                 elif event.type == pygame.USEREVENT: self._handle_userevent(event)
@@ -94,6 +97,19 @@ class Game():
     def _draw_sprite(self, sprite):
         self.screen.blit(sprite.image, sprite.rect)
 
+    def _test_connection(self):
+        self.signalCountSend += 1
+        if not self.may_move():
+            if self.signalCountRecive%1000==0:
+                print("Signal Recive Before",self.signalCountRecive)
+            self.signalCountRecive += 1
+        if self.may_move() and self.signalCountSend%100000 == 0 :
+            self.signalCountSend = 1
+            self.queue_put({
+                    "mode": "check"
+                    })
+    
+    
     def _handle_click(self, event):
         if event.button == 1:
             if self.may_start():
@@ -152,6 +168,9 @@ class Game():
             self.do_rematch(self.CONTINUE)
             if not self.rematch:
                 self.draw_board()
+        elif event.mode =="check":
+            self.signalCountRecive = 0
+                    
         elif event.mode == "quit":
             if self.rematch:
                 self.set_main()
