@@ -32,11 +32,14 @@ def recvall(sock, n):
     return data
 
 dataset = {}
-with open('database.txt','rb') as f:
-    if os.path.getsize('database.txt') > 0: 
+with open('dataset.txt','rb') as f:
+    if os.path.getsize('dataset.txt') > 0: 
         dataset = pickle.loads(f.read())
 
 folders = {}
+with open('folders.txt','rb') as f:
+    if os.path.getsize('folders.txt') > 0: 
+        folders = pickle.loads(f.read())
 
 def init():
     HOST = ""                # Nome Simbolico que significa todas as interfaces
@@ -49,7 +52,7 @@ def init():
 
 def insert_db(login, senha):
     dataset[login] = senha;
-    with open('database.txt','wb') as f: 
+    with open('dataset.txt','wb') as f: 
         pickle.dump(dataset,f)
     return
 
@@ -61,16 +64,14 @@ def create_dir(login, folderName):
     return "exfolder"
 
 def send_status(conn, msg):
-    carry = msg.encode()
+    carry = msg
     data_string = pickle.dumps(carry, -1)
     send_msg(conn, data_string)
     return
 
-def download(fileDst, conn):
-    file2save = recv_msg(conn)
-    file2save_loaded = pickle.loads(file2save)
+def download(fileDst,fileCnt, conn):
     f = open(fileDst, "wb")
-    f.write(file2save_loaded)
+    f.write(pickle.loads(fileCnt))
     f.close()
     return
 
@@ -84,34 +85,35 @@ def upload(fileSrc, conn):
 
 
 def fileServer(login, conn):
+    #global folders
     #receive option
+    print (folders)
     while True:
         data = recv_msg(conn)
         if (data is None):
             break
         data_loaded = pickle.loads(data)
         
-        opt = data_loaded["opt"].decode()
+        opt = data_loaded["opt"]
         
-        #download
+        #se o cliente faz upload
         if (opt == "1"):            
-            folderName = data_loaded["foldername"].decode()
-            fileName = data_loaded["fn"].decode()
-            pth = folderName + "/" + fileName + "/"
+            folderName = data_loaded["foldername"]
+            fileName = data_loaded["fn"]
+            pth = folderName + "/" + fileName 
             print (login)
-            if (pth in folders[login]):
-                download(pth, conn)
+            if (folderName in folders[login]):
+                download(pth, data_loaded["filecontent"], conn)
                 send_status(conn, "ok")
             else:
                 send_status(conn, "err")
             
-        #upload
+        #se o cliente faz download
         if (opt == "2"):
-            folderName = data_loaded["foldername"].decode()
-            fileName = data_loaded["fn"].decode()
-            folders[login].append(folderName + "/" + fileName + "/")
-            pth = folderName + "/" + fileName + "/",
-            if (folderName in folders[login]):
+            folderName = data_loaded["foldername"]
+            fileName = data_loaded["fn"]
+            pth = folderName + "/" + fileName
+            if (pth in folders[login] or folderName in folders[login]):
                 upload(pth, conn)
                 send_status(conn, "ok")
             else:
@@ -119,25 +121,32 @@ def fileServer(login, conn):
             
         #create folder
         if (opt == "3"):
-            folderName = data_loaded["foldername"].decode()
+            folderName = data_loaded["foldername"]
             st = create_dir(login, folderName)
-            data = pickle.dumps(st.encode(),-1)
+            saveFolders()
+            data = pickle.dumps(st,-1)
             send_msg(conn, data)
         
         #share
         if (opt == "5"):
             break
     return -1
-    
+
+def saveFolders():
+    with open('folders.txt','wb') as folderFile:
+        folder_byte = pickle.dumps(folders)
+        folderFile.write(folder_byte)
+        folderFile.close()
+
 def loginInterface(conn,addr):
     while True:
         data = recv_msg(conn)
         if (data is None):
             break
         data_loaded = pickle.loads(data)
-        login = data_loaded["login"].decode()
-        senha = data_loaded["senha"].decode()
-        opt = data_loaded["option"].decode()
+        login = data_loaded["login"]
+        senha = data_loaded["senha"]
+        opt = data_loaded["option"]
         ex = 0
         if (opt == "1"):
             if login in dataset:
@@ -145,6 +154,7 @@ def loginInterface(conn,addr):
             else:
                 insert_db(login, senha)
                 folders[login] = []
+                saveFolders()
                 send_status(conn, "ok")
                 ex = fileServer(login, conn)
                 break
@@ -163,6 +173,7 @@ def loginInterface(conn,addr):
     return
 
 [HOST, PORT, s, dataset] = init()
+
 while True:
     conn, addr = s.accept()
     print ("Conectado por: ", addr[0])

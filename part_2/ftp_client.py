@@ -49,12 +49,12 @@ def funcLogin():
     status = ""
     while True:
         [opt, login, senha] = readCred()
-        carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
+        carry = {"option": opt, "login": login, "senha": senha}
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         
         status = recv_msg(s)
-        st = pickle.loads(status).decode()
+        st = pickle.loads(status)
         
         if (st == "err"):
             if (opt == "1"):
@@ -94,7 +94,7 @@ def fileServer():
     #receive option
     opt = input("1- Upload\n2- Download\n3- Criar pasta\n5- Sair\nDigite opcao: ")
     if (opt == "5"):
-        carry = {"opt":opt.encode()}
+        carry = {"opt":opt}
         data_string = pickle.dumps(carry,-1)
         send_msg(s,data_string)
         return 5
@@ -102,11 +102,11 @@ def fileServer():
     #create folder
     if (opt == "3"):
         folderName = input("Digite o nome da pasta: ")
-        carry = {"opt":opt.encode(), "foldername":folderName.encode()} 
+        carry = {"opt":opt, "foldername":folderName} 
         data_string = pickle.dumps(carry,-1)
         send_msg(s,data_string)
         st = recv_msg(s)
-        st_received = pickle.loads(st).decode()
+        st_received = pickle.loads(st)
         
         if (st_received == "exfolder"):
             print ("Ja existe pasta com esse nome!")
@@ -121,22 +121,34 @@ def fileServer():
         folderName = input("Digite o nome da pasta de destino no server (enter para raiz): ")
         fileName = input("Digite o nome do arquivo: ")
         
-        carry = {"opt":opt.encode(), "foldername": folderName.encode(),"fn":fileName.encode()}
+        file2send = open(fileName, 'rb')
+        fileLoad = file2send.read()
+        byte_file = pickle.dumps(fileLoad, -1)
+
+        carry = {"opt":opt, "foldername": folderName,"fn":fileName, "filecontent":byte_file}
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         
-        upload(fileName, s)
+        st = recv_msg(s)
+        print (st)
         
     #download
     elif (opt == "2"):
         folderName = input("Digite o nome da pasta de origem no server (enter para raiz): ")
         fileName = input("Digite o nome do arquivo: ")
-        
-        carry = {"opt":opt.encode(), "foldername": folderName.encode(),"fn":fileName.encode()}
+
+        carry = {"opt":opt, "foldername": folderName,"fn":fileName}
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         
-        download(fileName, s)
+        file2recv = open(fileName, 'wb')
+        filerecv = recv_msg(s)
+        filerecv_loaded = pickle.loads(filerecv)
+        file2recv.write(filerecv_loaded)
+        file2recv.close()
+        
+        st = recv_msg(s)
+        print (st)
     else:
         return -1
     
