@@ -115,7 +115,18 @@ def fileServer():
         else:
             return 3
        
-    
+    if (opt == "4"):
+        folderName = input("Digite o nome da pasta: ")
+        fileName = input("Digite o nome do arquivo: (enter para toda a pasta)")
+        login = input("Digite o nome do usuario para compartilhar: ")
+        carry = {"opt":opt, "foldername":folderName, "filename":fileName, "login":login}        
+        data_string = pickle.dumps(carry,-1)
+        send_msg(s,data_string)
+        st = recv_msg(s)
+        st_received = pickle.loads(st)
+        
+        print(st_received)
+
     #upload
     if (opt == "1"):
         folderName = input("Digite o nome da pasta de destino no server (enter para raiz): ")
@@ -130,7 +141,7 @@ def fileServer():
         send_msg(s, data_string)
         
         st = recv_msg(s)
-        print (st)
+        print (pickle.loads(st))
         
     #download
     elif (opt == "2"):
@@ -148,7 +159,7 @@ def fileServer():
         file2recv.close()
         
         st = recv_msg(s)
-        print (st)
+        print (pickle.loads(st))
     else:
         return -1
     

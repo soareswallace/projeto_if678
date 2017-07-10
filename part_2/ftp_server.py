@@ -128,6 +128,18 @@ def fileServer(login, conn):
             send_msg(conn, data)
         
         #share
+        if (opt == "4"):
+            login = data_loaded["login"]
+            fileName = data_loaded["filename"]
+            folderName = data_loaded["foldername"]
+            if (fileName != ""):
+                folders[login].append(folderName +"/"+ fileName)
+            else:
+                folders[login].append(folderName)  
+
+            saveFolders()
+            data = pickle.dumps("ok",-1)
+            send_msg(conn,data)
         if (opt == "5"):
             break
     return -1
