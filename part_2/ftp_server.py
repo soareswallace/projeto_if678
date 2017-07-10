@@ -42,8 +42,8 @@ with open('folders.txt','rb') as f:
         folders = pickle.loads(f.read())
 
 def init():
-    HOST = ""                # Nome Simbolico que significa todas as interfaces
-    PORT = int(sys.argv[1])              # Porta escolhida arbitrariamente escolhida pelo user
+    HOST = sys.argv[1]               # Nome Simbolico que significa todas as interfaces
+    PORT = int(sys.argv[2])              # Porta escolhida arbitrariamente escolhida pelo user
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Cria o Socket
     s.bind((HOST, PORT))
     s.listen(10)
@@ -114,8 +114,8 @@ def fileServer(login, conn):
             fileName = data_loaded["fn"]
             pth = folderName + "/" + fileName
             if (pth in folders[login] or folderName in folders[login]):
-                upload(pth, conn)
                 send_status(conn, "ok")
+                upload(pth, conn)
             else:
                 send_status(conn, "err")
             
@@ -129,14 +129,16 @@ def fileServer(login, conn):
         
         #share
         if (opt == "4"):
-            login = data_loaded["login"]
+            logshare = data_loaded["login"]
             fileName = data_loaded["filename"]
             folderName = data_loaded["foldername"]
+            
+            name = folderName
             if (fileName != ""):
-                folders[login].append(folderName +"/"+ fileName)
-            else:
-                folders[login].append(folderName)  
-
+                name += + "/" + fileName
+                
+            if (logshare in dataset and name in folders[login]):
+                folders[logshare].append(name)
             saveFolders()
             data = pickle.dumps("ok",-1)
             send_msg(conn,data)

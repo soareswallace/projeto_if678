@@ -7,8 +7,8 @@ import struct
 #!-*- conding: utf8 -*-
 
 def init():
-    HOST = "localhost"
-    PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
+    HOST = sys.argv[1]
+    PORT = int(sys.argv[2])    #leitura da porta que sera dada com input do user.
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
     s.connect((HOST, PORT)) # conectando ao servidor
     return [HOST, PORT, s]
@@ -58,13 +58,13 @@ def funcLogin():
         
         if (st == "err"):
             if (opt == "1"):
-                print ("Login ja existe.")
+                print ("\n\nLogin ja existe.\n")
             elif (opt == "2"):
-                print ("Login ou senha incorretos.")
+                print ("\n\nLogin ou senha incorretos.\n")
         
         elif (st == "ok"):
             break
-    print ("Logado!")
+    print ("\n\nLogado!\n")
     return
 
 def download(fileName, s):
@@ -92,7 +92,7 @@ def upload(fileSrc, s):
 
 def fileServer():
     #receive option
-    opt = input("1- Upload\n2- Download\n3- Criar pasta\n5- Sair\nDigite opcao: ")
+    opt = input("------------MENU------------\n\n1- Upload\n2- Download\n3- Criar pasta\n4- Compartilhar pasta\n5- Sair\nDigite opcao: ")
     if (opt == "5"):
         carry = {"opt":opt}
         data_string = pickle.dumps(carry,-1)
@@ -109,7 +109,7 @@ def fileServer():
         st_received = pickle.loads(st)
         
         if (st_received == "exfolder"):
-            print ("Ja existe pasta com esse nome!")
+            print ("\n\nJa existe pasta com esse nome!\n")
             return -1
         
         else:
@@ -125,8 +125,12 @@ def fileServer():
         st = recv_msg(s)
         st_received = pickle.loads(st)
         
-        print(st_received)
-
+        if (st_received == "err"):
+            print ("\n\nLogin inexistente ou pasta inexistente!\n")
+            
+        else:
+            print ("\n\nPasta compartilhada com "+login+"!\n")
+        return 4
     #upload
     if (opt == "1"):
         folderName = input("Digite o nome da pasta de destino no server (enter para raiz): ")
@@ -140,8 +144,12 @@ def fileServer():
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         
-        st = recv_msg(s)
-        print (pickle.loads(st))
+        st = pickle.loads(recv_msg(s))
+        if (st == "err"):
+            print ("\n\nVoce nao tem acesso a essa pasta/arquivo ou nao existe!\n")
+            
+        else:
+            print ("\nArquivo enviado!\n")
         
     #download
     elif (opt == "2"):
@@ -152,14 +160,16 @@ def fileServer():
         data_string = pickle.dumps(carry, -1)
         send_msg(s, data_string)
         
-        file2recv = open(fileName, 'wb')
-        filerecv = recv_msg(s)
-        filerecv_loaded = pickle.loads(filerecv)
-        file2recv.write(filerecv_loaded)
-        file2recv.close()
+        st = pickle.loads(recv_msg(s))
+        if (st == "err"):
+            print ("\n\nVoce nao tem acesso a essa pasta/arquivo ou nao existe!\n")
+        else:
+            file2recv = open(fileName, 'wb')
+            filerecv = recv_msg(s)
+            file2recv.write(filerecv)
+            file2recv.close()
+            print ("\n\nArquivo baixado!\n")
         
-        st = recv_msg(s)
-        print (pickle.loads(st))
     else:
         return -1
     
@@ -178,10 +188,10 @@ while True:
         break
         
     elif (ex == 3):
-        print ("Pasta criada!")
-
+        print ("\n\nPasta criada!\n")
+        
     elif(ex == -1):    
-        print ("Operacao invalida!")
+        print ("\n\nOperacao invalida!\n")
 	###########################################
 	#--------------------------------------------------------------------------#
 s.close()
