@@ -1,7 +1,6 @@
 import socket
 import sys
 import os
-import numpy as np
 import pickle
 import struct
 import threading
@@ -32,8 +31,12 @@ def recvall(sock, n):
         data += packet
     return data
 
-with open('database.txt','r') as f:
-    dataset = [tuple(map(str, i.rstrip('\r\n').split(' '))) for i in f]
+dataset = {}
+with open('database.txt','rb') as f:
+    if os.path.getsize('database.txt') > 0: 
+        dataset = pickle.loads(f.read())
+
+folders = {}
 
 def init():
     HOST = ""                # Nome Simbolico que significa todas as interfaces
@@ -44,21 +47,20 @@ def init():
     return [HOST, PORT, s, dataset]
 
 
-def insert_db(t):
-    dataset.append(t);
-    f = open('database.txt', 'a')
-    line = ' '.join(str(x) for x in t)
-    f.write(line + '\n')
-    f.close()
+def insert_db(login, senha):
+    dataset[login] = senha;
+    with open('database.txt','wb') as f: 
+        pickle.dump(dataset,f)
     return
 
-def create_dir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory, 493)
-        return directory
+def create_dir(login, folderName):
+    if not os.path.exists(folderName):
+        os.makedirs(folderName, 493)
+        folders[login].append(folderName)
+        return folderName
     return "exfolder"
 
-def send_status(msg):
+def send_status(conn, msg):
     carry = msg.encode()
     data_string = pickle.dumps(carry, -1)
     send_msg(conn, data_string)
@@ -81,7 +83,7 @@ def upload(fileSrc, conn):
     return
 
 
-def fileServer(directory, conn):
+def fileServer(login, conn):
     #receive option
     while True:
         data = recv_msg(conn)
@@ -92,24 +94,36 @@ def fileServer(directory, conn):
         opt = data_loaded["opt"].decode()
         
         #download
-        if (opt == "1"):
+        if (opt == "1"):            
             folderName = data_loaded["foldername"].decode()
             fileName = data_loaded["fn"].decode()
-            download(directory + folderName +"/"+ fileName, conn)
+            pth = folderName + "/" + fileName + "/"
+            print (login)
+            if (pth in folders[login]):
+                download(pth, conn)
+                send_status(conn, "ok")
+            else:
+                send_status(conn, "err")
             
         #upload
         if (opt == "2"):
             folderName = data_loaded["foldername"].decode()
             fileName = data_loaded["fn"].decode()
-            upload(directory + folderName + "/" + fileName, conn)
+            folders[login].append(folderName + "/" + fileName + "/")
+            pth = folderName + "/" + fileName + "/",
+            if (folderName in folders[login]):
+                upload(pth, conn)
+                send_status(conn, "ok")
+            else:
+                send_status(conn, "err")
             
         #create folder
         if (opt == "3"):
             folderName = data_loaded["foldername"].decode()
-            st = create_dir(directory + folderName)
+            st = create_dir(login, folderName)
             data = pickle.dumps(st.encode(),-1)
             send_msg(conn, data)
-            
+        
         #share
         if (opt == "5"):
             break
@@ -117,45 +131,38 @@ def fileServer(directory, conn):
     
 def loginInterface(conn,addr):
     while True:
-        sema = threading.Lock()
-        sema.acquire()
         data = recv_msg(conn)
         if (data is None):
             break
         data_loaded = pickle.loads(data)
-        
-        ################### LOGIN CREATION ########################
-        login_db = [str(i[0]) for i in dataset]
         login = data_loaded["login"].decode()
         senha = data_loaded["senha"].decode()
         opt = data_loaded["option"].decode()
         ex = 0
         if (opt == "1"):
-            if login in login_db:
-                send_status("err")
+            if login in dataset:
+                send_status(conn, "err")
             else:
-                insert_db([login, senha])
-                directory = create_dir("data/" + login + "/")
-                send_status("ok")
-                ex = fileServer(directory, conn)
+                insert_db(login, senha)
+                folders[login] = []
+                send_status(conn, "ok")
+                ex = fileServer(login, conn)
                 break
 
         if (opt == "2"):
             # check if login matches password
-            if (login, senha) not in dataset:
-                send_status("err")
+            if login not in dataset or dataset[login] != senha:
+                send_status(conn,"err")
             else:
-                send_status("ok")
-                ex = fileServer("data/" + login + "/", conn)
+                send_status(conn,"ok")
+                ex = fileServer(login, conn)
                 break
 
         if (ex == "-1"):
             break
-        sema.release()
     return
 
 [HOST, PORT, s, dataset] = init()
-
 while True:
     conn, addr = s.accept()
     print ("Conectado por: ", addr[0])

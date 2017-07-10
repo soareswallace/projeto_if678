@@ -7,11 +7,11 @@ import struct
 #!-*- conding: utf8 -*-
 
 def init():
-	HOST = "localhost"
-	PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
-	s.connect((HOST, PORT)) # conectando ao servidor
-	return [HOST, PORT, s]
+    HOST = "localhost"
+    PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
+    s.connect((HOST, PORT)) # conectando ao servidor
+    return [HOST, PORT, s]
 	
 def send_msg(sock, msg):
     # Prefix each message with a 4-byte length (network byte order)
@@ -80,12 +80,19 @@ def upload(fileSrc, s):
     fileLoad = file2send.read()
     byte_file = pickle.dumps(fileLoad, -1)
     send_msg(s, byte_file)
+    st = recv_msg(s)
+    print (pickle.dumps(st))
+
+    if (st == "err"):
+        print ("deu erro")        
+    elif (st == "ok"):
+        print ("deu certo")
     file2send.close()
     return
 
 def fileServer():
     #receive option
-    opt = input("1- Upload\n2- Download\n3- Criar pasta\n4- Compartilhar arquivos\n5- Sair\nDigite opcao: ")
+    opt = input("1- Upload\n2- Download\n3- Criar pasta\n5- Sair\nDigite opcao: ")
     if (opt == "5"):
         carry = {"opt":opt.encode()}
         data_string = pickle.dumps(carry,-1)
