@@ -4,7 +4,7 @@ import sys
 #Criando um socket TCP
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #ligando o socket a porta descrita para inciar a escuta do server
-server_address = ('192.168.0.11', 10000)
+server_address = ('localhost', 10000)
 print >>sys.stderr, 'starting up on %s port %s' % server_address
 sock.bind(server_address)
 #esperando conexao
