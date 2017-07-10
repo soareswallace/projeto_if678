@@ -1,26 +1,157 @@
-PORTA = 5252
+import socket
+import sys
+import pickle
+import getpass
+import struct
 
-s = socket.socket()         # Create a socket object
-host = socket.gethostname()  # Get local machine name
-port = PORTA                 # Reserve a port for your service.
-print "O host escolhido foi:",host,":",port  
+#!-*- conding: utf8 -*-
 
-s.connect((host, port))
-print "Escolha o arquivo:"
-#Digitar file
-fileName = raw_input()
-print "O arquivo escolhido foi:",fileName
+def init():
+	HOST = "localhost"
+	PORT = int(sys.argv[1])    #leitura da porta que sera dada com input do user.
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # criando o socket
+	s.connect((HOST, PORT)) # conectando ao servidor
+	return [HOST, PORT, s]
+	
+def send_msg(sock, msg):
+    # Prefix each message with a 4-byte length (network byte order)
+    msg = struct.pack('>I', len(msg)) + msg
+    sock.sendall(msg)
 
-f = open(fileName,'rb')
-print 'Sending...'
-l = f.read(1024)
-while (l):
-    print 'Sending...'
-    s.send(l)
-    l = f.read(1024)
-f.close()
-print "Done Sending"
-s.shutdown(socket.SHUT_WR)
-print s.recv(1024)
+def recv_msg(sock):
+    # Read message length and unpack it into an integer
+    raw_msglen = recvall(sock, 4)
+    if not raw_msglen:
+        return None
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    # Read the message data
+    return recvall(sock, msglen)
+
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = ''.encode()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
+
+def readCred():
+    opt = input("1 - Criar Login\n2 - Logar\nDigite opcao: ")
+    log = input("Digite login: ")
+    senha = getpass.getpass("Digite senha: ")
+
+    return [opt, log, senha]
+    
+def funcLogin():
+    #Login
+    status = ""
+    while True:
+        [opt, login, senha] = readCred()
+        carry = {"option": opt.encode(), "login": login.encode(), "senha": senha.encode()}
+        data_string = pickle.dumps(carry, -1)
+        send_msg(s, data_string)
+        
+        status = recv_msg(s)
+        st = pickle.loads(status).decode()
+        
+        if (st == "err"):
+            if (opt == "1"):
+                print ("Login ja existe.")
+            elif (opt == "2"):
+                print ("Login ou senha incorretos.")
+        
+        elif (st == "ok"):
+            break
+    print ("Logado!")
+    return
+
+def download(fileName, s):
+    byte_file = recv_msg(s)
+    file_received = pickle.loads(byte_file)
+    file2recv = open("downloads/" + fileName, 'wb')
+    file2recv.write(file_received)
+    file2recv.close()
+    return
+    
+def upload(fileSrc, s):
+    file2send = open(fileSrc, 'rb')
+    fileLoad = file2send.read()
+    byte_file = pickle.dumps(fileLoad, -1)
+    send_msg(s, byte_file)
+    file2send.close()
+    return
+
+def fileServer():
+    #receive option
+    opt = input("1- Upload\n2- Download\n3- Criar pasta\n4- Compartilhar arquivos\n5- Sair\nDigite opcao: ")
+    if (opt == "5"):
+        carry = {"opt":opt.encode()}
+        data_string = pickle.dumps(carry,-1)
+        send_msg(s,data_string)
+        return 5
+    
+    #create folder
+    if (opt == "3"):
+        folderName = input("Digite o nome da pasta: ")
+        carry = {"opt":opt.encode(), "foldername":folderName.encode()} 
+        data_string = pickle.dumps(carry,-1)
+        send_msg(s,data_string)
+        st = recv_msg(s)
+        st_received = pickle.loads(st).decode()
+        
+        if (st_received == "exfolder"):
+            print ("Ja existe pasta com esse nome!")
+            return -1
+        
+        else:
+            return 3
+       
+    
+    #upload
+    if (opt == "1"):
+        folderName = input("Digite o nome da pasta de destino no server (enter para raiz): ")
+        fileName = input("Digite o nome do arquivo: ")
+        
+        carry = {"opt":opt.encode(), "foldername": folderName.encode(),"fn":fileName.encode()}
+        data_string = pickle.dumps(carry, -1)
+        send_msg(s, data_string)
+        
+        upload(fileName, s)
+        
+    #download
+    elif (opt == "2"):
+        folderName = input("Digite o nome da pasta de origem no server (enter para raiz): ")
+        fileName = input("Digite o nome do arquivo: ")
+        
+        carry = {"opt":opt.encode(), "foldername": folderName.encode(),"fn":fileName.encode()}
+        data_string = pickle.dumps(carry, -1)
+        send_msg(s, data_string)
+        
+        download(fileName, s)
+    else:
+        return -1
+    
+    return 0
+
+#--Global variables-#
+[HOST, PORT, s] = init() # initialize
+#------------------#
+
+funcLogin()
+while True:
+    # --------------------------- CONNECTION ----------------------------------#
+    ##########CONNECTION INTERFACE##############
+    ex = fileServer()
+    if (ex == 5):
+        break
+        
+    elif (ex == 3):
+        print ("Pasta criada!")
+
+    elif(ex == -1):    
+        print ("Operacao invalida!")
+	###########################################
+	#--------------------------------------------------------------------------#
 s.close()
-
