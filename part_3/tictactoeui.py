@@ -5,6 +5,7 @@ import queue
 import sys
 import socket
 import threading
+from datetime import datetime, timedelta
 
 SIZE = WIDTH, HEIGHT = 400, 550
 WHITE = pygame.Color("white")
@@ -42,6 +43,8 @@ class Game():
         self.txt_lose = MySprite("perdeu.png", [50,50])
         self.txt_turn = MySprite("suavez.png", [50,50])
         self.txt_wait = MySprite("aguardando.png", [50,50])
+        self.sync = MySprite("sync.png", [10,10])
+        self.last_sync = datetime.now()
         # Accept Input
         while True:
             for event in pygame.event.get():
@@ -69,6 +72,7 @@ class Game():
             pass
         else:
             self._draw_sprite(self.txt_wait)
+        self._draw_sprite(self.sync)
 
         pygame.display.flip()
 
@@ -104,32 +108,34 @@ class Game():
                 self.set_status(self.WAIT)
                 self.draw_board()
                 self.receiver.resume()
-            elif self.may_move():
-                print("TENTOU JOGAR")
-                # Jogadas
-                for block in self.get_blocks():
-                    if block.click_collided(event.pos) and block.update(self.player):
-                        print("JOGOU")
+            else:
+                if self.sync.click_collided(event.pos): self.request_sync()
+                if self.may_move():
+                    print("TENTOU JOGAR")
+                    # Jogadas
+                    for block in self.get_blocks():
+                        if block.click_collided(event.pos) and block.update(self.player):
+                            print("JOGOU")
+                            self.queue_put({
+                                "mode": "move",
+                                "block": block.id
+                            })
+                            self.set_status(self.WAIT)
+                            self.check_winner(self.player)
+                elif self.may_continue():
+                    if self.btn_leave.click_collided(event.pos):
+                        print("RECOMEÇOU")
                         self.queue_put({
-                            "mode": "move",
-                            "block": block.id
+                            "mode": "quit"
                         })
-                        self.set_status(self.WAIT)
-                        self.check_winner(self.player)
-            elif self.may_continue():
-                if self.btn_leave.click_collided(event.pos):
-                    print("RECOMEÇOU")
-                    self.queue_put({
-                        "mode": "quit"
-                    })
-                    self.set_main()
-                    self.receiver.pause()
-                if self.restart and self.btn_restart.click_collided(event.pos):
-                    print("REVANCHE")
-                    self.queue_put({
-                        "mode": "rematch"
-                    })
-                    self.reinit()
+                        self.set_main()
+                        self.receiver.pause()
+                    if self.restart and self.btn_restart.click_collided(event.pos):
+                        print("REVANCHE")
+                        self.queue_put({
+                            "mode": "rematch"
+                        })
+                        self.reinit()
 
         elif event.button == 3:
             print("DEBUG:")
@@ -160,6 +166,23 @@ class Game():
                 self.foe_addr = None
                 self.finish(self.winner)
             self.receiver.pause()
+        elif event.mode == "syn":
+            foe_board_sum = sum(event.board)
+            my_board_sum = sum([block.status for block in self.get_blocks()])
+            if my_board_sum > foe_board_sum:
+                # Meu jogo está avançado
+                self.do_sync()
+            elif foe_board_sum > my_board_sum:
+                # Ele jogou e eu não recebi
+                for block in self.get_blocks():
+                    block.update(event.board[block.id - 1], True)
+                self.set_status(self.TURN)
+                self.check_winner(self.foe)
+        elif event.mode == "synack":
+            for block in self.get_blocks():
+                block.update(event.board[block.id - 1], True)
+            self.set_status(self.TURN)
+            self.check_winner(self.foe)
         else:
             self.exit_safely()
 
@@ -185,6 +208,20 @@ class Game():
             self.finish(Block.AVAILABLE)
         else:
             self.draw_board()            
+
+    def do_rematch(self, false_status):
+        if self.rematch:
+            self.set_status(self.foe)
+            self.rematch = False
+        else:
+            self.set_status(false_status)
+            self.rematch = True
+
+    def do_sync(self):
+        self.queue_put({
+            "mode": "synack",
+            "board": [block.status for block in self.get_blocks()]
+        })
 
     def draw_board(self):
         self._clean_board()
@@ -239,13 +276,14 @@ class Game():
 
         self.draw_board()
 
-    def do_rematch(self, false_status):
-        if self.rematch:
-            self.set_status(self.foe)
-            self.rematch = False
-        else:
-            self.set_status(false_status)
-            self.rematch = True
+    def request_sync(self):
+        now = datetime.now()
+        if self.last_sync + timedelta(seconds=30) < now:
+            self.last_sync = now
+            self.queue_put({
+                "mode": "syn",
+                "board": [block.status for block in self.get_blocks()]
+            })
 
     def set_main(self):
         self.foe_addr = None
